@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Keuangan SAINSPIQ</title>
+<title>Keuangan SAINSPIQ - Admin</title>
+<!-- Library Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -12,10 +14,19 @@
   --red:#A32D2D;--red-l:#FCEBEB;
   --bg:#F2F5F4;--card:#fff;--border:#E2EBE7;
   --txt:#1A2E28;--txt2:#6B8A80;--txt3:#A8BDB7;
-  --shadow:0 2px 8px rgba(0,0,0,.07);
+  --shadow:0 4px 12px rgba(0,0,0,.08);
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
-.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg); position:relative; overflow-x:hidden;}
+
+/* LOGIN SCREEN */
+#login-screen { position: absolute; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.3s ease; }
+#login-screen.hidden { opacity: 0; pointer-events: none; display: none; }
+.login-card { background: var(--card); width: 100%; max-width: 360px; padding: 32px 24px; border-radius: 24px; box-shadow: var(--shadow); text-align: center; }
+.login-logo { width: 64px; height: 64px; background: var(--green-l); color: var(--green); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; }
+.login-title { font-size: 22px; font-weight: 800; color: var(--txt); margin-bottom: 4px; }
+.login-sub { font-size: 13px; color: var(--txt2); margin-bottom: 24px; }
+.login-err { color: var(--red); font-size: 12px; background: var(--red-l); padding: 10px; border-radius: 8px; margin-bottom: 16px; display: none; font-weight: 600;}
 
 /* HEADER */
 .header{background:var(--green);padding:16px 16px 0;color:#fff}
@@ -31,54 +42,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sc-val{font-size:15px;font-weight:700;color:#fff}
 .sc-val.profit{color:var(--green-t)}
 .sc-val.warn{color:var(--amber-t)}
-.sc-val.loss{color:#F09595}
 
 /* NAV PILLS */
 .nav-pills{display:flex;gap:8px;padding:14px 16px 4px;overflow-x:auto;scrollbar-width:none}
 .nav-pills::-webkit-scrollbar{display:none}
 .pill{flex-shrink:0;padding:9px 18px;border-radius:24px;font-size:13px;font-weight:600;border:2px solid transparent;cursor:pointer;background:var(--card);color:var(--txt2);transition:all .18s}
 .pill.active{background:var(--green);color:#fff;border-color:var(--green)}
-.pill:not(.active):hover{background:var(--green-l);color:var(--green-d)}
 
 /* CONTENT */
-.content{flex:1;padding:12px 16px 80px;display:none}
+#main-app { display: none; flex-direction: column; flex: 1; }
+.content{flex:1;padding:12px 16px 80px; display:none; animation: fadeIn 0.2s ease;}
 .content.show{display:block}
+@keyframes fadeIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
 
 /* SECTION HEAD */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:4px}
 .sec-title{font-size:15px;font-weight:700;color:var(--txt)}
 .btn-add{background:var(--green);color:#fff;border:none;border-radius:22px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(15,110,86,.28)}
-.btn-add:active{transform:scale(.96)}
+
+/* GRID 4 PENGELUARAN */
+.grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+.grid-item { background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; display:flex; flex-direction: column; align-items: center; justify-content: center; gap:8px;}
+.grid-item:hover { border-color: var(--green); background: var(--green-l); transform: translateY(-2px); }
+.grid-item:active { transform: translateY(0); }
+.g-ico { font-size: 26px; }
+.g-lbl { font-size: 13px; font-weight: 700; color: var(--txt); }
 
 /* CARDS */
 .card{background:var(--card);border-radius:16px;padding:14px 15px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px solid var(--border)}
-.card:active{transform:scale(.99)}
 .ava{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
 .ava.g{background:var(--green-l);color:var(--green-d)}
 .ava.a{background:var(--amber-l);color:var(--amber)}
 .ava.r{background:var(--red-l);color:var(--red)}
-.ava.b{background:#E6F1FB;color:#0C447C}
 .ci{flex:1;min-width:0}
 .cn{font-size:14px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cm{font-size:11px;color:var(--txt3);margin-top:2px}
+.cm-badge { display:inline-block; padding:2px 6px; background:var(--bg); border-radius:4px; font-size:10px; font-weight:700; margin-right:4px; color:var(--txt2)}
 .ca{font-size:14px;font-weight:700;flex-shrink:0}
 .ca.g{color:var(--green)}
 .ca.a{color:var(--amber)}
 .ca.r{color:var(--red)}
 .del-btn{background:none;border:none;color:var(--txt3);font-size:17px;padding:4px;cursor:pointer;flex-shrink:0;line-height:1}
-.del-btn:hover{color:var(--red)}
 
 /* EMPTY */
 .empty{text-align:center;padding:40px 20px;color:var(--txt3);font-size:13px}
 .empty-ico{font-size:40px;display:block;margin-bottom:10px;opacity:.5}
 
-/* FILTER MONTH STRIP */
-.month-strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px;margin-bottom:4px}
-.month-strip::-webkit-scrollbar{display:none}
-.mb{flex-shrink:0;padding:5px 13px;border-radius:18px;font-size:11px;font-weight:600;border:1.5px solid var(--border);background:var(--card);color:var(--txt2);cursor:pointer}
-.mb.active{background:var(--green);color:#fff;border-color:var(--green)}
-
-/* MODAL */
+/* FORMS & MODALS */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end}
 .overlay.open{display:flex}
 .modal{background:var(--card);border-radius:22px 22px 0 0;padding:20px 18px 32px;width:100%;max-width:480px;margin:0 auto;max-height:92vh;overflow-y:auto;animation:su .22s ease}
@@ -89,180 +99,160 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .flbl{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px}
 .finp{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;background:#F8FBF9;color:var(--txt);outline:none;transition:border .18s;-webkit-appearance:none}
 .finp:focus{border-color:var(--green);background:#fff}
-select.finp{cursor:pointer}
 .btn-save{width:100%;background:var(--green);color:#fff;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px;box-shadow:0 4px 12px rgba(15,110,86,.28)}
-.btn-save:active{transform:scale(.98)}
 .btn-cn{width:100%;background:transparent;color:var(--txt2);border:1.5px solid var(--border);border-radius:14px;padding:13px;font-size:15px;cursor:pointer;margin-top:8px}
+.btn-logout { background:var(--red-l); color:var(--red); border:none; padding:6px 12px; border-radius:12px; font-size:11px; font-weight:700; cursor:pointer;}
 
-/* LAPORAN */
-.period-selector{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.ps-lbl{font-size:12px;font-weight:600;color:var(--txt2)}
-.ps-select{padding:7px 12px;border-radius:10px;border:1.5px solid var(--border);font-size:13px;background:var(--card);color:var(--txt);outline:none}
+/* LOADER */
+.loader-ui { display: none; text-align:center; padding: 20px; font-size: 13px; font-weight: 600; color: var(--green); }
+
+/* LAPORAN & MASTER DATA */
 .recap-card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
 .recap-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px}
 .recap-row.total{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:16px;font-weight:700}
-.rl{color:var(--txt2)}
-.rl.total{color:var(--txt)}
-.divl{height:1px;background:var(--border);margin:3px 0}
-
-/* MASTER DATA */
 .master-section{margin-bottom:20px}
-.master-title{font-size:13px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
 .person-card{background:var(--card);border-radius:14px;padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;gap:12px;border:1px solid var(--border)}
-.pc-info{flex:1;min-width:0}
-.pc-name{font-size:14px;font-weight:600;color:var(--txt)}
-.pc-meta{font-size:11px;color:var(--txt3);margin-top:1px}
-.pc-stat{text-align:right;flex-shrink:0}
-.pc-stat-val{font-size:14px;font-weight:700}
-.pc-stat-lbl{font-size:10px;color:var(--txt3);margin-top:1px}
-
-/* CHART BAR */
-.chart-wrap{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--border)}
-.chart-title{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px}
-.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px}
-.bar-lbl{width:70px;color:var(--txt2);text-align:right;flex-shrink:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar-track{flex:1;background:var(--bg);border-radius:6px;height:18px;overflow:hidden}
-.bar-fill{height:100%;border-radius:6px;transition:width .4s ease}
-.bar-val{font-size:11px;font-weight:700;flex-shrink:0;min-width:60px}
-
-/* FAB */
-.fab-group{position:fixed;bottom:20px;right:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:50}
-.fab{background:var(--green);color:#fff;border:none;border-radius:50px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(15,110,86,.35);display:flex;align-items:center;gap:8px;transition:transform .1s}
-.fab:active{transform:scale(.95)}
-.fab-mini{background:var(--card);color:var(--green);border:2px solid var(--green);border-radius:50px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);display:none;align-items:center;gap:6px}
-.fab-mini.show{display:flex}
-
-/* EXPORT BTN */
-.export-row{display:flex;gap:8px;margin-top:16px}
-.exp-btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer}
-.exp-csv{background:var(--green-l);color:var(--green-d)}
-.exp-print{background:#E6F1FB;color:#0C447C}
 </style>
 </head>
 <body>
 <div class="app">
 
-<!-- HEADER -->
-<div class="header">
-  <div class="hd-top">
-    <div>
-      <div class="hd-sub">Lembaga Les Privat</div>
-      <div class="hd-brand">SAINSPIQ</div>
+  <!-- SCREEN LOGIN -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">&#128181;</div>
+      <div class="login-title">SAINSPIQ Admin</div>
+      <div class="login-sub">Masuk untuk kelola keuangan lembaga</div>
+      <div id="login-error" class="login-err">Username atau Password salah!</div>
+      
+      <div class="fg" style="text-align:left">
+        <label class="flbl">Username</label>
+        <input type="text" id="login-user" class="finp" placeholder="Masukkan username">
+      </div>
+      <div class="fg" style="text-align:left">
+        <label class="flbl">Password</label>
+        <input type="password" id="login-pass" class="finp" placeholder="••••••••">
+      </div>
+      <button class="btn-save" onclick="doLogin()" id="btn-login">Masuk Sekarang</button>
+      
+      <div style="margin-top: 20px; font-size: 11px; color: var(--txt3);">
+        *Gunakan admin / edudigital pada Mode Preview
+      </div>
     </div>
-    <div class="hd-icon" onclick="switchPage('master')" title="Master Data">&#9881;</div>
-  </div>
-  <div class="summary" id="summary-bar">
-    <div class="sc"><div class="sc-lbl">Total Omset</div><div class="sc-val" id="s-omset">Rp 0</div></div>
-    <div class="sc"><div class="sc-lbl">Keuntungan</div><div class="sc-val profit" id="s-untung">Rp 0</div></div>
-    <div class="sc"><div class="sc-lbl">Gaji Guru</div><div class="sc-val warn" id="s-gaji">Rp 0</div></div>
-    <div class="sc"><div class="sc-lbl">Total Keluar</div><div class="sc-val warn" id="s-keluar">Rp 0</div></div>
-  </div>
-</div>
-
-<!-- NAV PILLS -->
-<div class="nav-pills" id="nav-pills">
-  <div class="pill active" onclick="switchPage('pemasukan')">&#128176; Pemasukan</div>
-  <div class="pill" onclick="switchPage('gaji')">&#128105;&#8205;&#127979; Gaji Guru</div>
-  <div class="pill" onclick="switchPage('lainnya')">&#128230; Lain-lain</div>
-  <div class="pill" onclick="switchPage('laporan')">&#128202; Laporan</div>
-  <div class="pill" onclick="switchPage('master')">&#128101; Data</div>
-</div>
-
-<!-- PAGE: PEMASUKAN -->
-<div class="content show" id="page-pemasukan">
-  <div class="month-strip" id="ms-pemasukan"></div>
-  <div class="sec-head">
-    <div class="sec-title">Pembayaran Wali Murid</div>
-    <button class="btn-add" onclick="openModal('pemasukan')">+ Tambah</button>
-  </div>
-  <div id="list-pemasukan"></div>
-</div>
-
-<!-- PAGE: GAJI -->
-<div class="content" id="page-gaji">
-  <div class="month-strip" id="ms-gaji"></div>
-  <div class="sec-head">
-    <div class="sec-title">Penggajian Guru</div>
-    <button class="btn-add" onclick="openModal('gaji')">+ Tambah</button>
-  </div>
-  <div id="list-gaji"></div>
-</div>
-
-<!-- PAGE: LAINNYA -->
-<div class="content" id="page-lainnya">
-  <div class="month-strip" id="ms-lainnya"></div>
-  <div class="sec-head">
-    <div class="sec-title">Pengeluaran Lain-lain</div>
-    <button class="btn-add" onclick="openModal('lainnya')">+ Tambah</button>
-  </div>
-  <div id="list-lainnya"></div>
-</div>
-
-<!-- PAGE: LAPORAN -->
-<div class="content" id="page-laporan">
-  <div class="sec-title" style="margin-bottom:14px">Laporan Keuangan</div>
-
-  <div class="period-selector">
-    <span class="ps-lbl">Periode:</span>
-    <select class="ps-select" id="rp-bulan" onchange="renderLaporan()">
-      <option value="semua">Semua Periode</option>
-    </select>
-    <select class="ps-select" id="rp-tahun" onchange="buildMonthOptions();renderLaporan()">
-      <option value="semua">Semua Tahun</option>
-    </select>
   </div>
 
-  <div class="recap-card">
-    <div class="recap-row"><div class="rl">Pembayaran Wali Murid</div><div style="font-weight:700;color:var(--green)" id="r-omset">Rp 0</div></div>
-    <div class="divl"></div>
-    <div class="recap-row"><div class="rl">Gaji Guru</div><div style="font-weight:600;color:var(--amber)" id="r-gaji">Rp 0</div></div>
-    <div class="recap-row"><div class="rl">Pengeluaran Lain-lain</div><div style="font-weight:600;color:var(--amber)" id="r-lainnya">Rp 0</div></div>
-    <div class="recap-row total"><div class="rl total">Total Pengeluaran</div><div style="color:var(--red)" id="r-keluar">Rp 0</div></div>
-    <div class="recap-row total"><div class="rl total">Keuntungan Bersih</div><div id="r-untung" style="font-size:17px;font-weight:800">Rp 0</div></div>
-  </div>
-
-  <!-- CHART BULANAN -->
-  <div class="chart-wrap" id="chart-section" style="display:none">
-    <div class="chart-title">Tren Bulanan</div>
-    <div id="chart-bars"></div>
-  </div>
-
-  <div class="sec-title" style="margin:16px 0 10px">Rekap Wali Murid</div>
-  <div id="r-wali"></div>
-  <div class="sec-title" style="margin:16px 0 10px">Rekap Gaji per Guru</div>
-  <div id="r-guru"></div>
-  <div class="sec-title" style="margin:16px 0 10px">Lain-lain Detail</div>
-  <div id="r-lain-list"></div>
-
-  <div class="export-row">
-    <button class="exp-btn exp-csv" onclick="exportCSV()">&#11123; Export CSV</button>
-    <button class="exp-btn exp-print" onclick="window.print()">&#128438; Print</button>
-  </div>
-</div>
-
-<!-- PAGE: MASTER DATA -->
-<div class="content" id="page-master">
-  <div class="master-section">
-    <div class="sec-head">
-      <div class="master-title">&#128101; Daftar Wali Murid</div>
-      <button class="btn-add" onclick="openModal('wali')">+ Tambah</button>
+  <!-- APLIKASI UTAMA (Disembunyikan sebelum login) -->
+  <div id="main-app">
+    <!-- HEADER -->
+    <div class="header">
+      <div class="hd-top">
+        <div>
+          <div class="hd-sub">Keuangan SAINSPIQ</div>
+          <div class="hd-brand">Dashboard</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">&#10006; Keluar</button>
+      </div>
+      <div class="summary" id="summary-bar">
+        <div class="sc"><div class="sc-lbl">Total Omset</div><div class="sc-val" id="s-omset">Rp 0</div></div>
+        <div class="sc"><div class="sc-lbl">Keuntungan</div><div class="sc-val profit" id="s-untung">Rp 0</div></div>
+        <div class="sc"><div class="sc-lbl">Total Keluar</div><div class="sc-val warn" id="s-keluar">Rp 0</div></div>
+        <div class="sc"><div class="sc-lbl">Bulan Ini</div><div class="sc-val" id="s-bulan">Rp 0</div></div>
+      </div>
     </div>
-    <div id="list-wali"></div>
-  </div>
-  <div class="master-section">
-    <div class="sec-head">
-      <div class="master-title">&#128105;&#8205;&#127979; Daftar Guru</div>
-      <button class="btn-add" onclick="openModal('guru')">+ Tambah</button>
+
+    <!-- NAV PILLS -->
+    <div class="nav-pills" id="nav-pills">
+      <div class="pill active" onclick="switchPage('laporan')">&#128202; Dashboard</div>
+      <div class="pill" onclick="switchPage('pemasukan')">&#128176; Pemasukan</div>
+      <div class="pill" onclick="switchPage('pengeluaran')">&#128184; Pengeluaran</div>
+      <div class="pill" onclick="switchPage('master')">&#128101; Master Data</div>
     </div>
-    <div id="list-guru"></div>
-  </div>
+
+    <div id="global-loader" class="loader-ui">🔄 Menyinkronkan Data...</div>
+
+    <!-- PAGE: DASHBOARD / LAPORAN -->
+    <div class="content show" id="page-laporan">
+      <div class="sec-title" style="margin-bottom:14px">Rekap Keuangan Keseluruhan</div>
+      <div class="recap-card">
+        <div class="recap-row"><div>Pembayaran Wali Murid</div><div style="font-weight:700;color:var(--green)" id="r-omset">Rp 0</div></div>
+        <div style="height:1px;background:var(--border);margin:3px 0"></div>
+        <div class="recap-row"><div>Gaji Guru</div><div style="font-weight:600;color:var(--amber)" id="r-gaji">Rp 0</div></div>
+        <div class="recap-row"><div>Operasional & Lainnya</div><div style="font-weight:600;color:var(--amber)" id="r-lainnya">Rp 0</div></div>
+        <div class="recap-row total"><div>Total Pengeluaran</div><div style="color:var(--red)" id="r-keluar">Rp 0</div></div>
+        <div class="recap-row total"><div>Keuntungan Bersih</div><div id="r-untung" style="font-size:17px;font-weight:800;color:var(--green)">Rp 0</div></div>
+      </div>
+      
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn-save" style="margin-top:0;background:var(--green-l);color:var(--green-d);box-shadow:none" onclick="exportCSV()">&#11123; Export Laporan CSV</button>
+      </div>
+    </div>
+
+    <!-- PAGE: PEMASUKAN -->
+    <div class="content" id="page-pemasukan">
+      <div class="sec-head">
+        <div class="sec-title">Data Pemasukan</div>
+        <button class="btn-add" onclick="openModal('pemasukan')">+ Tambah</button>
+      </div>
+      <div id="list-pemasukan"></div>
+    </div>
+
+    <!-- PAGE: PENGELUARAN (4 GRID) -->
+    <div class="content" id="page-pengeluaran">
+      <div class="sec-title" style="margin-bottom:12px;">Catat Pengeluaran</div>
+      
+      <!-- 4 GRID MENU -->
+      <div class="grid-4">
+        <div class="grid-item" onclick="openModalPengeluaran('Gaji Guru')">
+          <div class="g-ico">&#128105;&#8205;&#127979;</div>
+          <div class="g-lbl">Gaji Guru</div>
+        </div>
+        <div class="grid-item" onclick="openModalPengeluaran('Operasional')">
+          <div class="g-ico">&#128161;</div>
+          <div class="g-lbl">Operasional</div>
+        </div>
+        <div class="grid-item" onclick="openModalPengeluaran('Inventaris')">
+          <div class="g-ico">&#128187;</div>
+          <div class="g-lbl">Inventaris</div>
+        </div>
+        <div class="grid-item" onclick="openModalPengeluaran('Lain-lain')">
+          <div class="g-ico">&#128230;</div>
+          <div class="g-lbl">Lain-lain</div>
+        </div>
+      </div>
+
+      <div class="sec-head">
+        <div class="sec-title">Riwayat Pengeluaran</div>
+      </div>
+      <div id="list-pengeluaran"></div>
+    </div>
+
+    <!-- PAGE: MASTER DATA -->
+    <div class="content" id="page-master">
+      <div class="master-section">
+        <div class="sec-head">
+          <div class="sec-title">&#128101; Data Wali Murid</div>
+          <button class="btn-add" onclick="openModal('wali')">+ Tambah</button>
+        </div>
+        <div id="list-wali"></div>
+      </div>
+      <div class="master-section">
+        <div class="sec-head">
+          <div class="sec-title">&#128105;&#8205;&#127979; Data Guru</div>
+          <button class="btn-add" onclick="openModal('guru')">+ Tambah</button>
+        </div>
+        <div id="list-guru"></div>
+      </div>
+    </div>
+
+  </div> <!-- End Main App -->
+
 </div>
 
 <!-- MODAL PEMASUKAN -->
 <div class="overlay" id="ov-pemasukan" onclick="closeBg(event,'pemasukan')">
 <div class="modal">
   <div class="mhandle"></div>
-  <div class="mtitle">Catat Pembayaran</div>
+  <div class="mtitle">Catat Pemasukan</div>
   <div class="fg"><label class="flbl">Wali Murid</label>
     <select class="finp" id="p-wali"><option value="">-- Pilih Wali Murid --</option></select></div>
   <div class="fg"><label class="flbl">Nama Murid</label>
@@ -271,44 +261,37 @@ select.finp{cursor:pointer}
     <input class="finp" id="p-jumlah" type="number" placeholder="500000" min="0"/></div>
   <div class="fg"><label class="flbl">Tanggal</label>
     <input class="finp" id="p-tanggal" type="date"/></div>
-  <div class="fg"><label class="flbl">Keterangan (opsional)</label>
-    <input class="finp" id="p-ket" placeholder="Biaya bulan Mei"/></div>
-  <button class="btn-save" onclick="saveEntry('pemasukan')">Simpan</button>
+  <div class="fg"><label class="flbl">Keterangan</label>
+    <input class="finp" id="p-ket" placeholder="Biaya bulan ini"/></div>
+  <button class="btn-save" onclick="saveData('pemasukan')">Simpan Pemasukan</button>
   <button class="btn-cn" onclick="closeModal('pemasukan')">Batal</button>
 </div></div>
 
-<!-- MODAL GAJI -->
-<div class="overlay" id="ov-gaji" onclick="closeBg(event,'gaji')">
+<!-- MODAL PENGELUARAN DINAMIS -->
+<div class="overlay" id="ov-pengeluaran" onclick="closeBg(event,'pengeluaran')">
 <div class="modal">
   <div class="mhandle"></div>
-  <div class="mtitle">Catat Penggajian Guru</div>
-  <div class="fg"><label class="flbl">Nama Guru</label>
-    <select class="finp" id="g-guru"><option value="">-- Pilih Guru --</option></select></div>
-  <div class="fg"><label class="flbl">Jumlah Gaji (Rp)</label>
-    <input class="finp" id="g-jumlah" type="number" placeholder="240000" min="0"/></div>
-  <div class="fg"><label class="flbl">Tanggal Transfer</label>
-    <input class="finp" id="g-tanggal" type="date"/></div>
-  <div class="fg"><label class="flbl">Keterangan (opsional)</label>
-    <input class="finp" id="g-ket" placeholder="Gaji mengajar bulan Mei"/></div>
-  <button class="btn-save" onclick="saveEntry('gaji')">Simpan</button>
-  <button class="btn-cn" onclick="closeModal('gaji')">Batal</button>
-</div></div>
+  <div class="mtitle" id="out-title">Catat Pengeluaran</div>
+  
+  <input type="hidden" id="out-kategori" value="">
+  
+  <!-- Jika Gaji, tampilkan dropdown guru. Jika lain, text input -->
+  <div class="fg" id="out-penerima-wrapper">
+    <label class="flbl" id="out-penerima-lbl">Penerima / Keterangan Singkat</label>
+    <div id="out-penerima-input-area">
+      <!-- Diisi oleh JS -->
+    </div>
+  </div>
 
-<!-- MODAL LAINNYA -->
-<div class="overlay" id="ov-lainnya" onclick="closeBg(event,'lainnya')">
-<div class="modal">
-  <div class="mhandle"></div>
-  <div class="mtitle">Pengeluaran Lain-lain</div>
-  <div class="fg"><label class="flbl">Jenis Pengeluaran</label>
-    <input class="finp" id="l-nama" placeholder="Print soal, Beli buku..."/></div>
   <div class="fg"><label class="flbl">Jumlah (Rp)</label>
-    <input class="finp" id="l-jumlah" type="number" placeholder="50000" min="0"/></div>
+    <input class="finp" id="out-jumlah" type="number" placeholder="Contoh: 150000" min="0"/></div>
   <div class="fg"><label class="flbl">Tanggal</label>
-    <input class="finp" id="l-tanggal" type="date"/></div>
-  <div class="fg"><label class="flbl">Keterangan (opsional)</label>
-    <input class="finp" id="l-ket" placeholder="Keterangan tambahan"/></div>
-  <button class="btn-save" onclick="saveEntry('lainnya')">Simpan</button>
-  <button class="btn-cn" onclick="closeModal('lainnya')">Batal</button>
+    <input class="finp" id="out-tanggal" type="date"/></div>
+  <div class="fg"><label class="flbl">Keterangan Tambahan</label>
+    <input class="finp" id="out-ket" placeholder="Opsional"/></div>
+  
+  <button class="btn-save" onclick="saveData('pengeluaran')">Simpan Pengeluaran</button>
+  <button class="btn-cn" onclick="closeModal('pengeluaran')">Batal</button>
 </div></div>
 
 <!-- MODAL TAMBAH WALI -->
@@ -318,11 +301,11 @@ select.finp{cursor:pointer}
   <div class="mtitle">Tambah Wali Murid</div>
   <div class="fg"><label class="flbl">Nama Wali Murid</label>
     <input class="finp" id="w-nama" placeholder="Bpk. Ahmad"/></div>
-  <div class="fg"><label class="flbl">No. HP (opsional)</label>
+  <div class="fg"><label class="flbl">No. HP</label>
     <input class="finp" id="w-hp" placeholder="08xxxxxxxxxx"/></div>
-  <div class="fg"><label class="flbl">Alamat (opsional)</label>
+  <div class="fg"><label class="flbl">Alamat</label>
     <input class="finp" id="w-alamat" placeholder="Jl. Mawar No.5"/></div>
-  <button class="btn-save" onclick="saveMaster('wali')">Simpan</button>
+  <button class="btn-save" onclick="saveData('wali')">Simpan Wali</button>
   <button class="btn-cn" onclick="closeModal('wali')">Batal</button>
 </div></div>
 
@@ -335,474 +318,423 @@ select.finp{cursor:pointer}
     <input class="finp" id="gr-nama" placeholder="Bu Siti Rahayu"/></div>
   <div class="fg"><label class="flbl">Mata Pelajaran</label>
     <input class="finp" id="gr-mapel" placeholder="Matematika, IPA"/></div>
-  <div class="fg"><label class="flbl">No. HP (opsional)</label>
+  <div class="fg"><label class="flbl">No. HP</label>
     <input class="finp" id="gr-hp" placeholder="08xxxxxxxxxx"/></div>
-  <button class="btn-save" onclick="saveMaster('guru')">Simpan</button>
+  <button class="btn-save" onclick="saveData('guru')">Simpan Guru</button>
   <button class="btn-cn" onclick="closeModal('guru')">Batal</button>
 </div></div>
 
 <script>
-const KEY = 'sainspiq_v3';
+// ==========================================
+// KONFIGURASI APLIKASI
+// ==========================================
+// Ubah menjadi false untuk menggunakan Supabase di Production (GitHub Pages)
+const IS_PREVIEW = true; 
+
+// Konfigurasi Supabase (Dapatkan dari Project Settings > API di Dashboard Supabase)
+const SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co";
+const SUPABASE_KEY = "YOUR_ANON_KEY"; 
+
+let supabaseClient = null;
+if (!IS_PREVIEW) {
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+// State Database Lokal (Digunakan penuh jika IS_PREVIEW = true)
 let db = {
-  pemasukan:[], gaji:[], lainnya:[],
-  masterWali:[], masterGuru:[]
+  pemasukan: [], 
+  pengeluaran: [], 
+  master_wali: [], 
+  master_guru: []
 };
-let activeMonth = {pemasukan:'semua', gaji:'semua', lainnya:'semua'};
-let currentPage = 'pemasukan';
 
-try{ const r = localStorage.getItem(KEY); if(r) db = {...db, ...JSON.parse(r)}; }catch(e){}
+// ==========================================
+// LOGIC AUTENTIKASI (LOGIN / LOGOUT)
+// ==========================================
+let currentUser = null;
 
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const errBox = document.getElementById('login-error');
+  const btn = document.getElementById('btn-login');
 
-function fmt(n){ return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
+  if (!user || !pass) { errBox.style.display = 'block'; errBox.innerText = "Isi username & password"; return; }
 
-function initials(name){
-  return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';
+  btn.innerText = "Memeriksa...";
+  errBox.style.display = 'none';
+
+  if (IS_PREVIEW) {
+    // Login Dummy Local
+    setTimeout(() => {
+      if ((user === 'admin' && pass === 'edudigital') || (user === 'peserta' && pass === 'edudigital')) {
+        currentUser = { username: user, role: user === 'admin' ? 'admin' : 'staff' };
+        loginSuccess();
+      } else {
+        btn.innerText = "Masuk Sekarang";
+        errBox.style.display = 'block';
+        errBox.innerText = "Username/Password salah!";
+      }
+    }, 800);
+  } else {
+    // Login Supabase (Menggunakan tabel users kustom atau Auth bawaan)
+    // Untuk kesederhanaan, kita periksa dari tabel 'users' buatan kita (plain password untuk contoh edukasi)
+    const { data, error } = await supabaseClient
+      .from('users')
+      .select('*')
+      .eq('username', user)
+      .eq('password', pass)
+      .single();
+
+    btn.innerText = "Masuk Sekarang";
+
+    if (error || !data) {
+      errBox.style.display = 'block';
+      errBox.innerText = "Kredensial tidak ditemukan di Database";
+    } else {
+      currentUser = { username: data.username, role: data.role };
+      loginSuccess();
+    }
+  }
 }
 
-function toDateStr(d){
-  if(!d) return '';
-  try{ return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }
-  catch(e){ return d; }
+function loginSuccess() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('main-app').style.display = 'flex';
+  initApp();
 }
 
-function getMonths(type){
-  const s = new Set();
-  db[type].forEach(e=>{ if(e.tanggal) s.add(e.tanggal.slice(0,7)); });
-  return [...s].sort().reverse();
+function doLogout() {
+  currentUser = null;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
 }
 
-function filtered(type){
-  const m = activeMonth[type];
-  if(m==='semua') return db[type];
-  return db[type].filter(e=>e.tanggal&&e.tanggal.startsWith(m));
+// ==========================================
+// INIT & FETCH DATA
+// ==========================================
+async function initApp() {
+  switchPage('laporan');
+  await fetchData();
 }
 
-// ─── SWITCH PAGE ───
-function switchPage(page){
-  currentPage = page;
-  document.querySelectorAll('.content').forEach(c=>c.classList.remove('show'));
-  document.getElementById('page-'+page).classList.add('show');
-  document.querySelectorAll('.pill').forEach((p,i)=>{
-    p.classList.toggle('active', ['pemasukan','gaji','lainnya','laporan','master'][i]===page);
-  });
-  if(page==='laporan'){ buildYearOptions(); buildMonthOptions(); renderLaporan(); }
-  if(page==='master'){ renderMaster(); }
+async function fetchData() {
+  const loader = document.getElementById('global-loader');
+  loader.style.display = 'block';
+
+  if (IS_PREVIEW) {
+    // Generate Dummy Data agar Preview terlihat hidup
+    if(db.pemasukan.length === 0){
+        db.master_wali = [{id:1, nama:'Bpk Ahmad', hp:'081', alamat:'Jl. A'}];
+        db.master_guru = [{id:1, nama:'Bu Siti', mapel:'MTK', hp:'082'}];
+        db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Budi', jumlah:500000, tanggal: new Date().toISOString().split('T')[0], keterangan: 'Lunas'}];
+        db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: new Date().toISOString().split('T')[0], keterangan: 'Gaji Bulan ini'}];
+    }
+  } else {
+    // Fetch dari Supabase secara Paralel
+    try {
+      const [resPem, resPeng, resWali, resGuru] = await Promise.all([
+        supabaseClient.from('pemasukan').select('*').order('tanggal', {ascending: false}),
+        supabaseClient.from('pengeluaran').select('*').order('tanggal', {ascending: false}),
+        supabaseClient.from('master_wali').select('*').order('nama', {ascending: true}),
+        supabaseClient.from('master_guru').select('*').order('nama', {ascending: true})
+      ]);
+      
+      db.pemasukan = resPem.data || [];
+      db.pengeluaran = resPeng.data || [];
+      db.master_wali = resWali.data || [];
+      db.master_guru = resGuru.data || [];
+    } catch (e) {
+      alert("Gagal sinkronisasi data dengan Supabase.");
+    }
+  }
+  
+  loader.style.display = 'none';
   renderAll();
 }
 
-// ─── MONTH STRIP ───
-function renderMonthStrip(type){
-  const months = getMonths(type);
-  const strip = document.getElementById('ms-'+type);
-  let html = `<div class="mb ${activeMonth[type]==='semua'?'active':''}" onclick="setMonth('${type}','semua')">Semua</div>`;
-  months.forEach(m=>{
-    const lbl = new Date(m+'-02').toLocaleDateString('id-ID',{month:'short',year:'numeric'});
-    html += `<div class="mb ${activeMonth[type]===m?'active':''}" onclick="setMonth('${type}','${m}')">${lbl}</div>`;
-  });
-  strip.innerHTML = html;
+// ==========================================
+// UI RENDERERS & HELPERS
+// ==========================================
+function fmt(n){ return 'Rp\u00a0' + Math.round(n||0).toLocaleString('id-ID'); }
+function initials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
+function toDateStr(d){ return d ? new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : ''; }
+
+function switchPage(page){
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('show'));
+  document.getElementById('page-'+page).classList.add('show');
+  
+  const pills = document.querySelectorAll('.pill');
+  pills.forEach((p,i)=> p.classList.toggle('active', ['laporan','pemasukan','pengeluaran','master'][i]===page));
+  
+  renderAll();
 }
 
-function setMonth(type, val){
-  activeMonth[type] = val;
-  renderList(type);
-  renderMonthStrip(type);
-  renderSummary();
+function renderAll() {
+  renderDashboard();
+  renderPemasukan();
+  renderPengeluaran();
+  renderMaster();
 }
 
-// ─── RENDER LIST ───
-function renderList(type){
-  const rows = filtered(type).slice().sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
-  const el = document.getElementById('list-'+type);
-  if(!rows.length){
-    const lbl={pemasukan:'pembayaran',gaji:'penggajian',lainnya:'pengeluaran'}[type];
-    el.innerHTML=`<div class="empty"><span class="empty-ico">&#128203;</span>Belum ada data ${lbl}</div>`;
+function renderDashboard() {
+  const tOmset = db.pemasukan.reduce((sum, item) => sum + Number(item.jumlah), 0);
+  
+  const gajiArr = db.pengeluaran.filter(e => e.kategori === 'Gaji Guru');
+  const lainArr = db.pengeluaran.filter(e => e.kategori !== 'Gaji Guru');
+  
+  const tGaji = gajiArr.reduce((sum, item) => sum + Number(item.jumlah), 0);
+  const tLain = lainArr.reduce((sum, item) => sum + Number(item.jumlah), 0);
+  const tKeluar = tGaji + tLain;
+  const tUntung = tOmset - tKeluar;
+
+  // Header Summary
+  document.getElementById('s-omset').innerText = fmt(tOmset);
+  document.getElementById('s-keluar').innerText = fmt(tKeluar);
+  const elUntung = document.getElementById('s-untung');
+  elUntung.innerText = fmt(tUntung);
+  elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'r'); // r for red if negative
+
+  // Laporan Lengkap Tab
+  document.getElementById('r-omset').innerText = fmt(tOmset);
+  document.getElementById('r-gaji').innerText = fmt(tGaji);
+  document.getElementById('r-lainnya').innerText = fmt(tLain);
+  document.getElementById('r-keluar').innerText = fmt(tKeluar);
+  
+  const rUntung = document.getElementById('r-untung');
+  rUntung.innerText = fmt(tUntung);
+  rUntung.style.color = tUntung >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+function renderPemasukan() {
+  const el = document.getElementById('list-pemasukan');
+  if(db.pemasukan.length === 0){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">&#128203;</div>Belum ada data pemasukan</div>';
     return;
   }
-  const av={pemasukan:'g',gaji:'a',lainnya:'r'};
-  const ac={pemasukan:'g',gaji:'a',lainnya:'r'};
-  el.innerHTML = rows.map(e=>{
-    let sub='';
-    if(type==='pemasukan') sub=[e.murid?'Murid: '+e.murid:'',e.ket].filter(Boolean).join(' · ');
-    else if(type==='gaji') sub=[e.mapel,e.ket].filter(Boolean).join(' · ');
-    else sub=e.ket||'';
-    const meta=[toDateStr(e.tanggal),sub].filter(Boolean).join(' · ');
-    return `<div class="card">
-      <div class="ava ${av[type]}">${initials(e.nama)}</div>
-      <div class="ci"><div class="cn">${e.nama}</div><div class="cm">${meta}</div></div>
-      <div class="ca ${ac[type]}">${fmt(e.jumlah)}</div>
-      <button class="del-btn" onclick="delEntry('${type}',${e.id})">&#10005;</button>
-    </div>`;
-  }).join('');
+  
+  el.innerHTML = db.pemasukan.map(e => `
+    <div class="card">
+      <div class="ava g">${initials(e.wali_nama)}</div>
+      <div class="ci">
+        <div class="cn">${e.wali_nama}</div>
+        <div class="cm">${toDateStr(e.tanggal)} · ${e.murid_nama ? 'Murid: '+e.murid_nama : ''}</div>
+      </div>
+      <div class="ca g">+ ${fmt(e.jumlah)}</div>
+      <button class="del-btn" onclick="deleteData('pemasukan', ${e.id})">&#10005;</button>
+    </div>
+  `).join('');
 }
 
-// ─── SUMMARY ───
-function calcTotals(pRows, gRows, lRows){
-  const omset  = pRows.reduce((s,e)=>s+e.jumlah,0);
-  const gaji   = gRows.reduce((s,e)=>s+e.jumlah,0);
-  const lain   = lRows.reduce((s,e)=>s+e.jumlah,0);
-  return {omset, gaji, lain, keluar:gaji+lain, untung:omset-(gaji+lain)};
-}
-
-function renderSummary(){
-  const {omset,gaji,keluar,untung} = calcTotals(db.pemasukan, db.gaji, db.lainnya);
-  document.getElementById('s-omset').textContent = fmt(omset);
-  document.getElementById('s-gaji').textContent  = fmt(gaji);
-  document.getElementById('s-keluar').textContent= fmt(keluar);
-  const eu = document.getElementById('s-untung');
-  eu.textContent = fmt(untung);
-  eu.className   = 'sc-val '+(untung>=0?'profit':'loss');
-}
-
-// ─── LAPORAN ───
-function getAllYears(){
-  const s=new Set();
-  [...db.pemasukan,...db.gaji,...db.lainnya].forEach(e=>{
-    if(e.tanggal) s.add(e.tanggal.slice(0,4));
-  });
-  return [...s].sort().reverse();
-}
-
-function buildYearOptions(){
-  const sel = document.getElementById('rp-tahun');
-  const cur = sel.value;
-  const years = getAllYears();
-  sel.innerHTML = '<option value="semua">Semua Tahun</option>';
-  years.forEach(y=>{ sel.innerHTML += `<option value="${y}"${y===cur?' selected':''}>${y}</option>`; });
-}
-
-function buildMonthOptions(){
-  const tahun = document.getElementById('rp-tahun').value;
-  const sel = document.getElementById('rp-bulan');
-  const cur = sel.value;
-  const allMonths = new Set();
-  [...db.pemasukan,...db.gaji,...db.lainnya].forEach(e=>{
-    if(!e.tanggal) return;
-    const y = e.tanggal.slice(0,4);
-    const m = e.tanggal.slice(0,7);
-    if(tahun==='semua'||y===tahun) allMonths.add(m);
-  });
-  const sorted = [...allMonths].sort().reverse();
-  sel.innerHTML = '<option value="semua">Semua Bulan</option>';
-  sorted.forEach(m=>{
-    const lbl = new Date(m+'-02').toLocaleDateString('id-ID',{month:'long',year:'numeric'});
-    sel.innerHTML += `<option value="${m}"${m===cur?' selected':''}>${lbl}</option>`;
-  });
-}
-
-function filterByPeriod(arr){
-  const bulan = document.getElementById('rp-bulan').value;
-  const tahun = document.getElementById('rp-tahun').value;
-  return arr.filter(e=>{
-    if(!e.tanggal) return bulan==='semua'&&tahun==='semua';
-    if(tahun!=='semua'&&!e.tanggal.startsWith(tahun)) return false;
-    if(bulan!=='semua'&&!e.tanggal.startsWith(bulan)) return false;
-    return true;
-  });
-}
-
-function renderLaporan(){
-  const p = filterByPeriod(db.pemasukan);
-  const g = filterByPeriod(db.gaji);
-  const l = filterByPeriod(db.lainnya);
-  const {omset,gaji,lain,keluar,untung} = calcTotals(p,g,l);
-
-  document.getElementById('r-omset').textContent   = fmt(omset);
-  document.getElementById('r-gaji').textContent    = fmt(gaji);
-  document.getElementById('r-lainnya').textContent = fmt(lain);
-  document.getElementById('r-keluar').textContent  = fmt(keluar);
-  const ru = document.getElementById('r-untung');
-  ru.textContent = fmt(untung);
-  ru.style.color = untung>=0?'var(--green)':'var(--red)';
-
-  // WALI RECAP
-  const wMap={};
-  p.forEach(e=>{ wMap[e.nama]=(wMap[e.nama]||0)+e.jumlah; });
-  const wArr = Object.entries(wMap).sort((a,b)=>b[1]-a[1]);
-  const maxW = wArr[0]?wArr[0][1]:1;
-  document.getElementById('r-wali').innerHTML = wArr.length
-    ? wArr.map(([n,t])=>`
-      <div class="card" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;width:100%">
-          <div class="ava g">${initials(n)}</div>
-          <div class="ci"><div class="cn">${n}</div></div>
-          <div class="ca g">${fmt(t)}</div>
-        </div>
-        <div style="width:100%;background:var(--bg);border-radius:6px;height:8px;overflow:hidden">
-          <div style="width:${Math.round(t/maxW*100)}%;height:100%;background:var(--green);border-radius:6px"></div>
-        </div>
-      </div>`).join('')
-    : '<div class="empty" style="padding:20px">Tidak ada data</div>';
-
-  // GURU RECAP
-  const gMap={};
-  g.forEach(e=>{ gMap[e.nama]=(gMap[e.nama]||0)+e.jumlah; });
-  const gArr = Object.entries(gMap).sort((a,b)=>b[1]-a[1]);
-  const maxG = gArr[0]?gArr[0][1]:1;
-  document.getElementById('r-guru').innerHTML = gArr.length
-    ? gArr.map(([n,t])=>`
-      <div class="card" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;width:100%">
-          <div class="ava a">${initials(n)}</div>
-          <div class="ci"><div class="cn">${n}</div></div>
-          <div class="ca a">${fmt(t)}</div>
-        </div>
-        <div style="width:100%;background:var(--bg);border-radius:6px;height:8px;overflow:hidden">
-          <div style="width:${Math.round(t/maxG*100)}%;height:100%;background:#EF9F27;border-radius:6px"></div>
-        </div>
-      </div>`).join('')
-    : '<div class="empty" style="padding:20px">Tidak ada data</div>';
-
-  // LAINNYA DETAIL
-  document.getElementById('r-lain-list').innerHTML = l.length
-    ? l.slice().sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal)).map(e=>`
-      <div class="card">
-        <div class="ava r">${initials(e.nama)}</div>
-        <div class="ci"><div class="cn">${e.nama}</div><div class="cm">${toDateStr(e.tanggal)}${e.ket?' · '+e.ket:''}</div></div>
-        <div class="ca r">${fmt(e.jumlah)}</div>
-      </div>`).join('')
-    : '<div class="empty" style="padding:20px">Tidak ada data</div>';
-
-  // CHART TREN BULANAN (jika semua periode atau 1 tahun)
-  const bulan = document.getElementById('rp-bulan').value;
-  const cs = document.getElementById('chart-section');
-  if(bulan==='semua'){
-    cs.style.display='block';
-    renderChart();
-  } else {
-    cs.style.display='none';
+function renderPengeluaran() {
+  const el = document.getElementById('list-pengeluaran');
+  if(db.pengeluaran.length === 0){
+    el.innerHTML = '<div class="empty"><div class="empty-ico">&#128184;</div>Belum ada data pengeluaran</div>';
+    return;
   }
+  
+  const catColor = { 'Gaji Guru': 'a', 'Operasional': 'r', 'Inventaris': 'r', 'Lain-lain': 'r' };
+  
+  el.innerHTML = db.pengeluaran.map(e => `
+    <div class="card">
+      <div class="ava ${catColor[e.kategori]||'r'}">${initials(e.penerima_nama || e.kategori)}</div>
+      <div class="ci">
+        <div class="cn">${e.penerima_nama || e.kategori}</div>
+        <div class="cm">
+          <span class="cm-badge">${e.kategori}</span>${toDateStr(e.tanggal)}
+        </div>
+      </div>
+      <div class="ca r">- ${fmt(e.jumlah)}</div>
+      <button class="del-btn" onclick="deleteData('pengeluaran', ${e.id})">&#10005;</button>
+    </div>
+  `).join('');
 }
 
-function renderChart(){
-  const tahun = document.getElementById('rp-tahun').value;
-  const mMap={};
-  const addTo=(arr,key)=>arr.forEach(e=>{
-    if(!e.tanggal) return;
-    if(tahun!=='semua'&&!e.tanggal.startsWith(tahun)) return;
-    const m=e.tanggal.slice(0,7);
-    if(!mMap[m]) mMap[m]={omset:0,keluar:0};
-    mMap[m][key]=(mMap[m][key]||0)+e.jumlah;
-  });
-  addTo(db.pemasukan,'omset');
-  addTo(db.gaji,'keluar');
-  addTo(db.lainnya,'keluar');
-  const months = Object.keys(mMap).sort();
-  if(!months.length){ document.getElementById('chart-bars').innerHTML=''; return; }
-  const maxVal = Math.max(...months.map(m=>Math.max(mMap[m].omset,mMap[m].keluar)),1);
-  document.getElementById('chart-bars').innerHTML = months.slice(-8).reverse().map(m=>{
-    const lbl=new Date(m+'-02').toLocaleDateString('id-ID',{month:'short',year:'2-digit'});
-    const o=mMap[m].omset||0; const k=mMap[m].keluar||0;
-    const wo=Math.round(o/maxVal*100); const wk=Math.round(k/maxVal*100);
-    return `<div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:5px">${lbl}</div>
-      <div class="bar-row" style="margin-bottom:5px">
-        <div class="bar-lbl" style="color:var(--green);width:50px">Omset</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${wo}%;background:var(--green)"></div></div>
-        <div class="bar-val" style="color:var(--green)">${fmt(o)}</div>
-      </div>
-      <div class="bar-row">
-        <div class="bar-lbl" style="color:var(--amber);width:50px">Keluar</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${wk}%;background:#EF9F27"></div></div>
-        <div class="bar-val" style="color:var(--amber)">${fmt(k)}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ─── MASTER DATA ───
-function renderMaster(){
+function renderMaster() {
   // WALI
-  const wali = db.masterWali;
-  const wel = document.getElementById('list-wali');
-  if(!wali.length){
-    wel.innerHTML='<div class="empty" style="padding:20px"><span class="empty-ico">&#128101;</span>Belum ada wali murid</div>';
-  } else {
-    wel.innerHTML = wali.map(w=>{
-      const total = db.pemasukan.filter(e=>e.nama===w.nama).reduce((s,e)=>s+e.jumlah,0);
-      return `<div class="person-card">
-        <div class="ava g">${initials(w.nama)}</div>
-        <div class="pc-info">
-          <div class="pc-name">${w.nama}</div>
-          <div class="pc-meta">${[w.hp,w.alamat].filter(Boolean).join(' · ')||'No data'}</div>
-        </div>
-        <div class="pc-stat">
-          <div class="pc-stat-val" style="color:var(--green)">${fmt(total)}</div>
-          <div class="pc-stat-lbl">Total bayar</div>
-        </div>
-        <button class="del-btn" onclick="delMaster('wali',${w.id})">&#10005;</button>
-      </div>`;
-    }).join('');
-  }
+  const elWali = document.getElementById('list-wali');
+  elWali.innerHTML = db.master_wali.length ? db.master_wali.map(w => `
+    <div class="person-card">
+      <div class="ava g">${initials(w.nama)}</div>
+      <div class="ci"><div class="cn">${w.nama}</div><div class="cm">${w.hp||'-'} · ${w.alamat||'-'}</div></div>
+      <button class="del-btn" onclick="deleteData('master_wali', ${w.id})">&#10005;</button>
+    </div>
+  `).join('') : '<div class="empty">Kosong</div>';
 
   // GURU
-  const guru = db.masterGuru;
-  const gel = document.getElementById('list-guru');
-  if(!guru.length){
-    gel.innerHTML='<div class="empty" style="padding:20px"><span class="empty-ico">&#128105;&#8205;&#127979;</span>Belum ada guru</div>';
-  } else {
-    gel.innerHTML = guru.map(g=>{
-      const total = db.gaji.filter(e=>e.nama===g.nama).reduce((s,e)=>s+e.jumlah,0);
-      return `<div class="person-card">
-        <div class="ava a">${initials(g.nama)}</div>
-        <div class="pc-info">
-          <div class="pc-name">${g.nama}</div>
-          <div class="pc-meta">${[g.mapel,g.hp].filter(Boolean).join(' · ')||'No data'}</div>
-        </div>
-        <div class="pc-stat">
-          <div class="pc-stat-val" style="color:var(--amber)">${fmt(total)}</div>
-          <div class="pc-stat-lbl">Total gaji</div>
-        </div>
-        <button class="del-btn" onclick="delMaster('guru',${g.id})">&#10005;</button>
-      </div>`;
-    }).join('');
-  }
+  const elGuru = document.getElementById('list-guru');
+  elGuru.innerHTML = db.master_guru.length ? db.master_guru.map(g => `
+    <div class="person-card">
+      <div class="ava a">${initials(g.nama)}</div>
+      <div class="ci"><div class="cn">${g.nama}</div><div class="cm">${g.mapel||'-'} · ${g.hp||'-'}</div></div>
+      <button class="del-btn" onclick="deleteData('master_guru', ${g.id})">&#10005;</button>
+    </div>
+  `).join('') : '<div class="empty">Kosong</div>';
 }
 
-// ─── MODAL ───
-function openModal(type){
-  const today = new Date().toISOString().split('T')[0];
-  if(type==='pemasukan'){
-    fillSelect('p-wali', db.masterWali.map(w=>w.nama));
-    document.getElementById('p-murid').value='';
-    document.getElementById('p-jumlah').value='';
-    document.getElementById('p-tanggal').value=today;
-    document.getElementById('p-ket').value='';
-  } else if(type==='gaji'){
-    fillSelect('g-guru', db.masterGuru.map(g=>g.nama));
-    document.getElementById('g-jumlah').value='';
-    document.getElementById('g-tanggal').value=today;
-    document.getElementById('g-ket').value='';
-  } else if(type==='lainnya'){
-    document.getElementById('l-nama').value='';
-    document.getElementById('l-jumlah').value='';
-    document.getElementById('l-tanggal').value=today;
-    document.getElementById('l-ket').value='';
-  } else if(type==='wali'){
-    document.getElementById('w-nama').value='';
-    document.getElementById('w-hp').value='';
-    document.getElementById('w-alamat').value='';
-  } else if(type==='guru'){
-    document.getElementById('gr-nama').value='';
-    document.getElementById('gr-mapel').value='';
-    document.getElementById('gr-hp').value='';
+// ==========================================
+// MODAL & FORM LOGIC
+// ==========================================
+const today = new Date().toISOString().split('T')[0];
+
+function openModal(type) {
+  if (type === 'pemasukan') {
+    const sel = document.getElementById('p-wali');
+    sel.innerHTML = '<option value="">-- Pilih Wali --</option>' + db.master_wali.map(w => `<option value="${w.nama}">${w.nama}</option>`).join('');
+    document.getElementById('p-murid').value = '';
+    document.getElementById('p-jumlah').value = '';
+    document.getElementById('p-tanggal').value = today;
+    document.getElementById('p-ket').value = '';
+  } else if (type === 'wali') {
+    document.getElementById('w-nama').value = '';
+    document.getElementById('w-hp').value = '';
+    document.getElementById('w-alamat').value = '';
+  } else if (type === 'guru') {
+    document.getElementById('gr-nama').value = '';
+    document.getElementById('gr-mapel').value = '';
+    document.getElementById('gr-hp').value = '';
   }
   document.getElementById('ov-'+type).classList.add('open');
 }
 
-function fillSelect(id, options){
-  const sel = document.getElementById(id);
-  sel.innerHTML = '<option value="">-- Pilih --</option>';
-  options.forEach(o=>{ sel.innerHTML+=`<option value="${o}">${o}</option>`; });
-}
-
-function closeModal(type){ document.getElementById('ov-'+type).classList.remove('open'); }
-
-function closeBg(e, type){
-  if(e.target===document.getElementById('ov-'+type)) closeModal(type);
-}
-
-// ─── SAVE ENTRY ───
-function saveEntry(type){
-  let entry={id:Date.now()};
-  if(type==='pemasukan'){
-    const nama=document.getElementById('p-wali').value.trim();
-    const murid=document.getElementById('p-murid').value.trim();
-    const jumlah=parseFloat(document.getElementById('p-jumlah').value);
-    const tanggal=document.getElementById('p-tanggal').value;
-    const ket=document.getElementById('p-ket').value.trim();
-    if(!nama||!jumlah||!tanggal){alert('Pilih wali murid, isi jumlah dan tanggal.');return;}
-    entry={...entry,nama,murid,jumlah,tanggal,ket};
-  } else if(type==='gaji'){
-    const nama=document.getElementById('g-guru').value.trim();
-    const jumlah=parseFloat(document.getElementById('g-jumlah').value);
-    const tanggal=document.getElementById('g-tanggal').value;
-    const ket=document.getElementById('g-ket').value.trim();
-    const gr=db.masterGuru.find(g=>g.nama===nama);
-    const mapel=gr?gr.mapel:'';
-    if(!nama||!jumlah||!tanggal){alert('Pilih guru, isi jumlah dan tanggal.');return;}
-    entry={...entry,nama,mapel,jumlah,tanggal,ket};
+function openModalPengeluaran(kategori) {
+  document.getElementById('out-title').innerText = "Catat " + kategori;
+  document.getElementById('out-kategori').value = kategori;
+  
+  const wrap = document.getElementById('out-penerima-input-area');
+  const lbl = document.getElementById('out-penerima-lbl');
+  
+  if (kategori === 'Gaji Guru') {
+    lbl.innerText = "Pilih Guru";
+    wrap.innerHTML = `<select class="finp" id="out-penerima"><option value="">-- Pilih Guru --</option>
+      ${db.master_guru.map(g=> `<option value="${g.nama}">${g.nama}</option>`).join('')}
+    </select>`;
   } else {
-    const nama=document.getElementById('l-nama').value.trim();
-    const jumlah=parseFloat(document.getElementById('l-jumlah').value);
-    const tanggal=document.getElementById('l-tanggal').value;
-    const ket=document.getElementById('l-ket').value.trim();
-    if(!nama||!jumlah||!tanggal){alert('Isi semua kolom wajib.');return;}
-    entry={...entry,nama,jumlah,tanggal,ket};
+    lbl.innerText = "Keterangan Singkat / Penerima";
+    wrap.innerHTML = `<input type="text" class="finp" id="out-penerima" placeholder="Contoh: Beli Spidol, Bayar PLN">`;
   }
-  db[type].unshift(entry);
-  save();
-  closeModal(type);
-  renderAll();
+
+  document.getElementById('out-jumlah').value = '';
+  document.getElementById('out-tanggal').value = today;
+  document.getElementById('out-ket').value = '';
+  
+  document.getElementById('ov-pengeluaran').classList.add('open');
 }
 
-function delEntry(type, id){
-  if(!confirm('Hapus data ini?')) return;
-  db[type]=db[type].filter(e=>e.id!==id);
-  save(); renderAll();
+function closeModal(type) {
+  document.getElementById('ov-'+type).classList.remove('open');
+}
+function closeBg(e, type) {
+  if(e.target.classList.contains('overlay')) closeModal(type);
 }
 
-// ─── SAVE MASTER ───
-function saveMaster(type){
-  if(type==='wali'){
-    const nama=document.getElementById('w-nama').value.trim();
-    const hp=document.getElementById('w-hp').value.trim();
-    const alamat=document.getElementById('w-alamat').value.trim();
-    if(!nama){alert('Nama wali murid wajib diisi');return;}
-    if(db.masterWali.find(w=>w.nama===nama)){alert('Wali murid sudah ada');return;}
-    db.masterWali.push({id:Date.now(),nama,hp,alamat});
+// ==========================================
+// CRUD OPERATIONS (SAVE / DELETE)
+// ==========================================
+async function saveData(type) {
+  let payload = {};
+  
+  if (type === 'pemasukan') {
+    payload = {
+      wali_nama: document.getElementById('p-wali').value,
+      murid_nama: document.getElementById('p-murid').value,
+      jumlah: Number(document.getElementById('p-jumlah').value),
+      tanggal: document.getElementById('p-tanggal').value,
+      keterangan: document.getElementById('p-ket').value
+    };
+    if(!payload.wali_nama || !payload.jumlah) return alert("Pilih Wali dan isi jumlah!");
+  } 
+  else if (type === 'pengeluaran') {
+    payload = {
+      kategori: document.getElementById('out-kategori').value,
+      penerima_nama: document.getElementById('out-penerima').value,
+      jumlah: Number(document.getElementById('out-jumlah').value),
+      tanggal: document.getElementById('out-tanggal').value,
+      keterangan: document.getElementById('out-ket').value
+    };
+    if(!payload.penerima_nama || !payload.jumlah) return alert("Isi Penerima/Keterangan dan Jumlah!");
+  }
+  else if (type === 'wali') {
+    payload = {
+      nama: document.getElementById('w-nama').value,
+      hp: document.getElementById('w-hp').value,
+      alamat: document.getElementById('w-alamat').value
+    };
+    if(!payload.nama) return alert("Nama wali wajib diisi!");
+    type = 'master_wali'; // Adjust for DB naming
+  }
+  else if (type === 'guru') {
+    payload = {
+      nama: document.getElementById('gr-nama').value,
+      mapel: document.getElementById('gr-mapel').value,
+      hp: document.getElementById('gr-hp').value
+    };
+    if(!payload.nama) return alert("Nama guru wajib diisi!");
+    type = 'master_guru';
+  }
+
+  // EXECUTE SAVE
+  if (IS_PREVIEW) {
+    payload.id = Date.now();
+    db[type].unshift(payload);
+    closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
+    renderAll();
   } else {
-    const nama=document.getElementById('gr-nama').value.trim();
-    const mapel=document.getElementById('gr-mapel').value.trim();
-    const hp=document.getElementById('gr-hp').value.trim();
-    if(!nama){alert('Nama guru wajib diisi');return;}
-    if(db.masterGuru.find(g=>g.nama===nama)){alert('Guru sudah ada');return;}
-    db.masterGuru.push({id:Date.now(),nama,mapel,hp});
+    try {
+      const { data, error } = await supabaseClient.from(type).insert([payload]).select();
+      if(error) throw error;
+      
+      db[type].unshift(data[0]); // Add newly inserted row to local state
+      closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
+      renderAll();
+    } catch(err) {
+      alert("Gagal menyimpan ke database: " + err.message);
+    }
   }
-  save();
-  closeModal(type);
-  renderMaster();
 }
 
-function delMaster(type, id){
-  if(!confirm('Hapus data ini?')) return;
-  if(type==='wali') db.masterWali=db.masterWali.filter(w=>w.id!==id);
-  else db.masterGuru=db.masterGuru.filter(g=>g.id!==id);
-  save(); renderMaster();
+async function deleteData(table, id) {
+  if (!confirm("Hapus data ini permanen?")) return;
+
+  if (IS_PREVIEW) {
+    db[table] = db[table].filter(item => item.id !== id);
+    renderAll();
+  } else {
+    try {
+      const { error } = await supabaseClient.from(table).delete().eq('id', id);
+      if(error) throw error;
+      
+      db[table] = db[table].filter(item => item.id !== id);
+      renderAll();
+    } catch(err) {
+      alert("Gagal menghapus data: " + err.message);
+    }
+  }
 }
 
-// ─── EXPORT CSV ───
-function exportCSV(){
-  const bulan = document.getElementById('rp-bulan').value;
-  const tahun = document.getElementById('rp-tahun').value;
-  let csv='Tipe,Nama,Detail,Jumlah,Tanggal,Keterangan\n';
-  filterByPeriod(db.pemasukan).forEach(e=>{
-    csv+=`Pemasukan,"${e.nama}","Murid: ${e.murid||'-'}",${e.jumlah},"${e.tanggal}","${e.ket||'-'}"\n`;
+// ==========================================
+// EXPORT CSV
+// ==========================================
+function exportCSV() {
+  let csv = "Tanggal,Tipe,Kategori,Nama/Keterangan,Pemasukan,Pengeluaran\n";
+  
+  db.pemasukan.forEach(p => {
+    csv += `${p.tanggal},Pemasukan,Wali Murid,"${p.wali_nama} (Murid: ${p.murid_nama||'-'})",${p.jumlah},0\n`;
   });
-  filterByPeriod(db.gaji).forEach(e=>{
-    csv+=`Gaji Guru,"${e.nama}","${e.mapel||'-'}",${e.jumlah},"${e.tanggal}","${e.ket||'-'}"\n`;
+  
+  db.pengeluaran.forEach(o => {
+    csv += `${o.tanggal},Pengeluaran,${o.kategori},"${o.penerima_nama}",0,${o.jumlah}\n`;
   });
-  filterByPeriod(db.lainnya).forEach(e=>{
-    csv+=`Lain-lain,"${e.nama}","-",${e.jumlah},"${e.tanggal}","${e.ket||'-'}"\n`;
-  });
-  const period=bulan!=='semua'?bulan:(tahun!=='semua'?tahun:'Semua');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`SAINSPIQ_${period}.csv`;
+
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("download", "Laporan_Keuangan_SAINSPIQ.csv");
   a.click();
 }
-
-// ─── RENDER ALL ───
-function renderAll(){
-  renderSummary();
-  ['pemasukan','gaji','lainnya'].forEach(t=>{
-    renderMonthStrip(t);
-    renderList(t);
-  });
-}
-
-renderAll();
 </script>
 </body>
 </html>
