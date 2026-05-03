@@ -20,8 +20,8 @@
   --txt:#1A2E28;--txt2:#6B8A80;--txt3:#A8BDB7;
   --shadow:0 6px 16px rgba(0,0,0,.06);
 }
-body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
-.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg); position:relative; overflow-x:hidden;}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh; overflow-x:hidden;}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg); position:relative;}
 
 /* LOGIN SCREEN */
 #login-screen { position: absolute; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.3s ease; }
@@ -32,8 +32,8 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .login-sub { font-size: 13px; color: var(--txt2); margin-bottom: 24px; }
 .login-err { color: var(--red); font-size: 12px; background: var(--red-l); padding: 10px; border-radius: 8px; margin-bottom: 16px; display: none; font-weight: 600;}
 
-/* HEADER */
-.header {background: linear-gradient(145deg, #04382c 0%, var(--green) 100%); padding: 24px 20px 40px; color: #fff; border-bottom-left-radius: 32px; border-bottom-right-radius: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; z-index: 1;}
+/* HEADER - Dipergelap dengan gradien baru */
+.header {background: linear-gradient(145deg, #021a14 0%, #074737 100%); padding: 24px 20px 40px; color: #fff; border-bottom-left-radius: 32px; border-bottom-right-radius: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: relative; z-index: 1;}
 .hd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .hd-brand{font-size:24px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
 .hd-icon{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
@@ -46,18 +46,12 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .sc-val.profit{color:var(--green-t)}
 .sc-val.warn{color:var(--amber-t)}
 
-/* NAV PILLS (GRID 4) */
-/* margin-top: 24px memberikan jarak antara background hijau dan tombol */
+/* NAV PILLS (GRID 4) - Ukuran Diperkecil & Disamakan */
 .nav-pills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 20px; margin-top: 24px; position: relative; z-index: 10; align-items: start; }
 .nav-pills::-webkit-scrollbar{display:none}
 
-/* Ukuran pill normal (untuk baris atas) */
-.pill { padding: 24px 10px; border-radius: 20px; font-size: 14px; font-weight: 700; border: 2px solid transparent; cursor: pointer; background: var(--card); color: var(--txt2); transition: all .2s; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); text-align: center; }
-.pill .p-ico { font-size: 32px; margin-bottom: 8px; }
-
-/* Ukuran pill lebih kecil (untuk baris bawah) */
-.pill.small { padding: 16px 10px; border-radius: 18px; font-size: 13px; }
-.pill.small .p-ico { font-size: 26px; margin-bottom: 6px; }
+.pill { padding: 16px 10px; border-radius: 18px; font-size: 13px; font-weight: 700; border: 2px solid transparent; cursor: pointer; background: var(--card); color: var(--txt2); transition: all .2s; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); text-align: center; }
+.pill .p-ico { font-size: 26px; margin-bottom: 6px; }
 
 .pill.active { background: var(--green); color: #fff; border-color: var(--green); box-shadow: 0 6px 16px rgba(15,110,86,.3); }
 .pill.active .p-ico { transform: scale(1.05); }
@@ -68,11 +62,14 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .content.show{display:block}
 @keyframes fadeIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
 
-/* SECTION HEAD */
+/* SECTION HEAD - Diperbarui agar Sticky (Diam di tempat saat scroll) */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:4px}
 .sec-title{font-size:16px;font-weight:800;color:var(--txt)}
 .btn-add{background:var(--green);color:#fff;border:none;border-radius:22px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(15,110,86,.28); transition: transform 0.1s;}
 .btn-add:active {transform: scale(0.95);}
+
+/* STICKY CLASS */
+.sticky { position: sticky; top: 0; background: rgba(242, 245, 244, 0.95); backdrop-filter: blur(4px); z-index: 50; padding: 16px 0 12px; margin-top: -16px; border-bottom: 1px solid transparent;}
 
 /* GRID 4 PENGELUARAN */
 .grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
@@ -174,12 +171,12 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
       </div>
     </div>
 
-    <!-- NAV PILLS (Pill atas normal, pill bawah menggunakan class 'small') -->
+    <!-- NAV PILLS (GRID 4 Disamakan ukurannya) -->
     <div class="nav-pills" id="nav-pills">
       <div class="pill active" onclick="switchPage('laporan')"><div class="p-ico">&#128202;</div>Dashboard</div>
       <div class="pill" onclick="switchPage('pemasukan')"><div class="p-ico">&#128176;</div>Pemasukan</div>
-      <div class="pill small" onclick="switchPage('pengeluaran')"><div class="p-ico">&#128184;</div>Pengeluaran</div>
-      <div class="pill small" onclick="switchPage('master')"><div class="p-ico">&#128101;</div>Master Data</div>
+      <div class="pill" onclick="switchPage('pengeluaran')"><div class="p-ico">&#128184;</div>Pengeluaran</div>
+      <div class="pill" onclick="switchPage('master')"><div class="p-ico">&#128101;</div>Master Data</div>
     </div>
 
     <div id="global-loader" class="loader-ui">🔄 Menyinkronkan Data...</div>
@@ -203,7 +200,8 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 
     <!-- PAGE: PEMASUKAN -->
     <div class="content" id="page-pemasukan">
-      <div class="sec-head">
+      <!-- sec-head dibuat sticky -->
+      <div class="sec-head sticky">
         <div class="sec-title">Data Pemasukan</div>
         <button class="btn-add" onclick="openModal('pemasukan')">+ Tambah</button>
       </div>
@@ -234,7 +232,8 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
         </div>
       </div>
 
-      <div class="sec-head">
+      <!-- sec-head dibuat sticky -->
+      <div class="sec-head sticky">
         <div class="sec-title">Riwayat Pengeluaran</div>
       </div>
       <div id="list-pengeluaran"></div>
@@ -243,14 +242,16 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
     <!-- PAGE: MASTER DATA -->
     <div class="content" id="page-master">
       <div class="master-section">
-        <div class="sec-head">
+        <!-- sec-head dibuat sticky -->
+        <div class="sec-head sticky">
           <div class="sec-title">&#128101; Data Wali Murid</div>
           <button class="btn-add" onclick="openModal('wali')">+ Tambah</button>
         </div>
         <div id="list-wali"></div>
       </div>
       <div class="master-section">
-        <div class="sec-head">
+        <!-- sec-head dibuat sticky -->
+        <div class="sec-head sticky">
           <div class="sec-title">&#128105;&#8205;&#127979; Data Guru</div>
           <button class="btn-add" onclick="openModal('guru')">+ Tambah</button>
         </div>
@@ -441,8 +442,8 @@ async function fetchData() {
   if (IS_PREVIEW) {
     // Generate Dummy Data agar Preview terlihat hidup
     if(db.pemasukan.length === 0){
-        db.master_wali = [{id:1, nama:'Bpk Ahmad', hp:'081', alamat:'Jl. A'}];
-        db.master_guru = [{id:1, nama:'Bu Siti', mapel:'MTK', hp:'082'}];
+        db.master_wali = [{id:1, nama:'Bpk Ahmad', hp:'081', alamat:'Jl. A'}, {id:2, nama:'Ibu Budi', hp:'082', alamat:'Jl. B'}];
+        db.master_guru = [{id:1, nama:'Bu Siti', mapel:'MTK', hp:'083'}, {id:2, nama:'Pak Eko', mapel:'IPA', hp:'084'}];
         db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Budi', jumlah:500000, tanggal: new Date().toISOString().split('T')[0], keterangan: 'Lunas'}];
         db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: new Date().toISOString().split('T')[0], keterangan: 'Gaji Bulan ini'}];
     }
@@ -483,6 +484,8 @@ function switchPage(page){
   const pills = document.querySelectorAll('.pill');
   pills.forEach((p,i)=> p.classList.toggle('active', ['laporan','pemasukan','pengeluaran','master'][i]===page));
   
+  // Reset scroll to top
+  window.scrollTo({top: 0, behavior: 'smooth'});
   renderAll();
 }
 
