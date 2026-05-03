@@ -18,7 +18,7 @@
   --red:#A32D2D;--red-l:#FCEBEB;
   --bg:#F2F5F4;--card:#fff;--border:#E2EBE7;
   --txt:#1A2E28;--txt2:#6B8A80;--txt3:#A8BDB7;
-  --shadow:0 6px 16px rgba(0,0,0,.06);
+  --shadow:0 6px 16px rgba(0,0,0,.04);
 }
 body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh; overflow-x:hidden;}
 .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg); position:relative;}
@@ -32,26 +32,30 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .login-sub { font-size: 13px; color: var(--txt2); margin-bottom: 24px; }
 .login-err { color: var(--red); font-size: 12px; background: var(--red-l); padding: 10px; border-radius: 8px; margin-bottom: 16px; display: none; font-weight: 600;}
 
-/* HEADER - Dipergelap dengan gradien baru */
-.header {background: linear-gradient(145deg, #021a14 0%, #074737 100%); padding: 24px 20px 40px; color: #fff; border-bottom-left-radius: 32px; border-bottom-right-radius: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: relative; z-index: 1;}
-.hd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.hd-brand{font-size:24px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
-.hd-icon{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+/* HEADER - HANYA UNTUK JUDUL & TOMBOL KELUAR */
+.header {background: linear-gradient(145deg, #021a14 0%, #074737 100%); padding: 24px 20px; color: #fff; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: relative; z-index: 1;}
+.hd-top{display:flex;align-items:center;justify-content:space-between;}
+.hd-brand{font-size:20px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+.btn-logout { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; font-family: inherit;}
+.btn-logout:hover { background:rgba(255,255,255,0.25); }
 
-/* SUMMARY ROW */
-.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:0}
-.sc{background:rgba(255,255,255,.12);border-radius:18px;padding:16px; border: 1px solid rgba(255,255,255,0.08);}
-.sc-lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
-.sc-val{font-size:22px;font-weight:800;color:#fff}
-.sc-val.profit{color:var(--green-t)}
-.sc-val.warn{color:var(--amber-t)}
+/* SUMMARY CARDS (DI PISAH SEBAGAI LAMAN DI BAWAH HEADER) */
+.sc-wrap { padding: 20px 20px 0; }
+.sc-header-title { font-size: 14px; font-weight: 800; color: var(--txt); margin-bottom: 12px; }
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0}
+.sc{background:var(--card);border-radius:16px;padding:16px; border: 1px solid var(--border); box-shadow: var(--shadow);}
+.sc-lbl{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.sc-val{font-size:20px;font-weight:800;color:var(--txt)}
+.sc-val.profit{color:var(--green)}
+.sc-val.warn{color:var(--amber)}
+.sc-val.red{color:var(--red)}
 
-/* NAV PILLS (GRID 4) - Ukuran Diperkecil & Disamakan */
-.nav-pills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 20px; margin-top: 24px; position: relative; z-index: 10; align-items: start; }
+/* NAV PILLS (GRID 4) - UKURAN DIPERKECIL */
+.nav-pills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-top: 20px; position: relative; z-index: 10; }
 .nav-pills::-webkit-scrollbar{display:none}
 
-.pill { padding: 16px 10px; border-radius: 18px; font-size: 13px; font-weight: 700; border: 2px solid transparent; cursor: pointer; background: var(--card); color: var(--txt2); transition: all .2s; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); text-align: center; }
-.pill .p-ico { font-size: 26px; margin-bottom: 6px; }
+.pill { padding: 14px 10px; border-radius: 16px; font-size: 12px; font-weight: 700; border: 2px solid transparent; cursor: pointer; background: var(--card); color: var(--txt2); transition: all .2s; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); text-align: center; }
+.pill .p-ico { font-size: 24px; margin-bottom: 4px; }
 
 .pill.active { background: var(--green); color: #fff; border-color: var(--green); box-shadow: 0 6px 16px rgba(15,110,86,.3); }
 .pill.active .p-ico { transform: scale(1.05); }
@@ -62,13 +66,12 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .content.show{display:block}
 @keyframes fadeIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
 
-/* SECTION HEAD - Diperbarui agar Sticky (Diam di tempat saat scroll) */
+/* SECTION HEAD (STICKY) */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:4px}
 .sec-title{font-size:16px;font-weight:800;color:var(--txt)}
 .btn-add{background:var(--green);color:#fff;border:none;border-radius:22px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(15,110,86,.28); transition: transform 0.1s;}
 .btn-add:active {transform: scale(0.95);}
 
-/* STICKY CLASS */
 .sticky { position: sticky; top: 0; background: rgba(242, 245, 244, 0.95); backdrop-filter: blur(4px); z-index: 50; padding: 16px 0 12px; margin-top: -16px; border-bottom: 1px solid transparent;}
 
 /* GRID 4 PENGELUARAN */
@@ -112,8 +115,6 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .finp:focus{border-color:var(--green);background:#fff; box-shadow: 0 0 0 4px var(--green-l);}
 .btn-save{width:100%;background:var(--green);color:#fff;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(15,110,86,.3); font-family: inherit;}
 .btn-cn{width:100%;background:transparent;color:var(--txt2);border:1.5px solid var(--border);border-radius:16px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px; font-family: inherit;}
-.btn-logout { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; font-family: inherit;}
-.btn-logout:hover { background:rgba(255,255,255,0.25); }
 
 /* LOADER */
 .loader-ui { display: none; text-align:center; padding: 20px; font-size: 14px; font-weight: 700; color: var(--green); }
@@ -155,7 +156,7 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 
   <!-- APLIKASI UTAMA (Disembunyikan sebelum login) -->
   <div id="main-app">
-    <!-- HEADER -->
+    <!-- HEADER PISAH -->
     <div class="header">
       <div class="hd-top">
         <div>
@@ -163,15 +164,20 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
         </div>
         <button class="btn-logout" onclick="doLogout()">&#10006; Keluar</button>
       </div>
+    </div>
+
+    <!-- SUMMARY CARDS (DATA LIVE BULAN INI) DI LAMAN -->
+    <div class="sc-wrap">
+      <div class="sc-header-title">Ringkasan Bulan Ini</div>
       <div class="summary" id="summary-bar">
-        <div class="sc"><div class="sc-lbl">Total Omset</div><div class="sc-val" id="s-omset">Rp 0</div></div>
+        <div class="sc"><div class="sc-lbl">Total Omset</div><div class="sc-val profit" id="s-omset">Rp 0</div></div>
         <div class="sc"><div class="sc-lbl">Keuntungan</div><div class="sc-val profit" id="s-untung">Rp 0</div></div>
         <div class="sc"><div class="sc-lbl">Total Keluar</div><div class="sc-val warn" id="s-keluar">Rp 0</div></div>
-        <div class="sc"><div class="sc-lbl">Bulan Ini</div><div class="sc-val" id="s-bulan">Rp 0</div></div>
+        <div class="sc"><div class="sc-lbl">Bulan Ini</div><div class="sc-val" id="s-bulan" style="font-size:16px; color:var(--txt2);">Mei 2026</div></div>
       </div>
     </div>
 
-    <!-- NAV PILLS (GRID 4 Disamakan ukurannya) -->
+    <!-- NAV PILLS (GRID 4 Diperkecil) -->
     <div class="nav-pills" id="nav-pills">
       <div class="pill active" onclick="switchPage('laporan')"><div class="p-ico">&#128202;</div>Dashboard</div>
       <div class="pill" onclick="switchPage('pemasukan')"><div class="p-ico">&#128176;</div>Pemasukan</div>
@@ -183,7 +189,7 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 
     <!-- PAGE: DASHBOARD / LAPORAN -->
     <div class="content show" id="page-laporan">
-      <div class="sec-title" style="margin-bottom:16px">Rekap Keuangan Keseluruhan</div>
+      <div class="sec-title" style="margin-bottom:16px">Rekap Keseluruhan (All-Time)</div>
       <div class="recap-card">
         <div class="recap-row"><div>Pembayaran Wali Murid</div><div style="font-weight:800;color:var(--green)" id="r-omset">Rp 0</div></div>
         <div style="height:1px;background:var(--border);margin:6px 0"></div>
@@ -193,9 +199,29 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
         <div class="recap-row total"><div>Keuntungan Bersih</div><div id="r-untung" style="font-size:18px;font-weight:800;color:var(--green)">Rp 0</div></div>
       </div>
       
-      <div style="display:flex;gap:10px;margin-top:20px;">
-        <button class="btn-save" style="margin-top:0;background:var(--green-l);color:var(--green-d);box-shadow:none" onclick="exportCSV()">&#11123; Export Laporan CSV</button>
+      <!-- SEKSI EXPORT DENGAN PILIHAN BULAN & TAHUN -->
+      <div class="sec-title" style="margin-top:24px;margin-bottom:12px">Export Laporan CSV</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+        <select id="exp-bulan" class="finp" style="padding:12px;">
+          <option value="semua">Semua Bulan</option>
+          <option value="01">Januari</option>
+          <option value="02">Februari</option>
+          <option value="03">Maret</option>
+          <option value="04">April</option>
+          <option value="05">Mei</option>
+          <option value="06">Juni</option>
+          <option value="07">Juli</option>
+          <option value="08">Agustus</option>
+          <option value="09">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+        <select id="exp-tahun" class="finp" style="padding:12px;">
+          <option value="semua">Semua Tahun</option>
+        </select>
       </div>
+      <button class="btn-save" style="margin-top:0;background:var(--green);color:#fff;box-shadow:none" onclick="exportCSV()">&#11123; Download Laporan CSV</button>
     </div>
 
     <!-- PAGE: PEMASUKAN -->
@@ -444,8 +470,10 @@ async function fetchData() {
     if(db.pemasukan.length === 0){
         db.master_wali = [{id:1, nama:'Bpk Ahmad', hp:'081', alamat:'Jl. A'}, {id:2, nama:'Ibu Budi', hp:'082', alamat:'Jl. B'}];
         db.master_guru = [{id:1, nama:'Bu Siti', mapel:'MTK', hp:'083'}, {id:2, nama:'Pak Eko', mapel:'IPA', hp:'084'}];
-        db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Budi', jumlah:500000, tanggal: new Date().toISOString().split('T')[0], keterangan: 'Lunas'}];
-        db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: new Date().toISOString().split('T')[0], keterangan: 'Gaji Bulan ini'}];
+        
+        const curDate = new Date().toISOString().split('T')[0]; // Current date
+        db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Budi', jumlah:500000, tanggal: curDate, keterangan: 'Lunas'}];
+        db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: curDate, keterangan: 'Gaji Bulan ini'}];
     }
   } else {
     // Fetch dari Supabase secara Paralel
@@ -466,6 +494,7 @@ async function fetchData() {
     }
   }
   
+  populateExportFilters();
   loader.style.display = 'none';
   renderAll();
 }
@@ -490,13 +519,40 @@ function switchPage(page){
 }
 
 function renderAll() {
+  renderSummaryLive();
   renderDashboard();
   renderPemasukan();
   renderPengeluaran();
   renderMaster();
 }
 
+function renderSummaryLive() {
+  const date = new Date();
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const currentMonthName = monthNames[date.getMonth()] + ' ' + date.getFullYear();
+  const currentMonthPrefix = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  
+  // Hitung khusus bulan ini
+  const pBulanIni = db.pemasukan.filter(e => e.tanggal && e.tanggal.startsWith(currentMonthPrefix));
+  const oBulanIni = db.pengeluaran.filter(e => e.tanggal && e.tanggal.startsWith(currentMonthPrefix));
+  
+  const tOmset = pBulanIni.reduce((sum, item) => sum + Number(item.jumlah), 0);
+  const tKeluar = oBulanIni.reduce((sum, item) => sum + Number(item.jumlah), 0);
+  const tUntung = tOmset - tKeluar;
+  
+  // Header Summary Laman
+  document.getElementById('s-omset').innerText = fmt(tOmset);
+  document.getElementById('s-keluar').innerText = fmt(tKeluar);
+  
+  const elUntung = document.getElementById('s-untung');
+  elUntung.innerText = fmt(tUntung);
+  elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'red'); 
+  
+  document.getElementById('s-bulan').innerText = currentMonthName;
+}
+
 function renderDashboard() {
+  // Recap Keseluruhan (All-time)
   const tOmset = db.pemasukan.reduce((sum, item) => sum + Number(item.jumlah), 0);
   
   const gajiArr = db.pengeluaran.filter(e => e.kategori === 'Gaji Guru');
@@ -507,14 +563,7 @@ function renderDashboard() {
   const tKeluar = tGaji + tLain;
   const tUntung = tOmset - tKeluar;
 
-  // Header Summary
-  document.getElementById('s-omset').innerText = fmt(tOmset);
-  document.getElementById('s-keluar').innerText = fmt(tKeluar);
-  const elUntung = document.getElementById('s-untung');
-  elUntung.innerText = fmt(tUntung);
-  elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'r'); // r for red if negative
-
-  // Laporan Lengkap Tab
+  // Laporan Lengkap Tab (All-Time)
   document.getElementById('r-omset').innerText = fmt(tOmset);
   document.getElementById('r-gaji').innerText = fmt(tGaji);
   document.getElementById('r-lainnya').innerText = fmt(tLain);
@@ -697,6 +746,7 @@ async function saveData(type) {
     payload.id = Date.now();
     db[type].unshift(payload);
     closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
+    populateExportFilters();
     renderAll();
   } else {
     try {
@@ -705,6 +755,7 @@ async function saveData(type) {
       
       db[type].unshift(data[0]); // Add newly inserted row to local state
       closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
+      populateExportFilters();
       renderAll();
     } catch(err) {
       alert("Gagal menyimpan ke database: " + err.message);
@@ -732,24 +783,59 @@ async function deleteData(table, id) {
 }
 
 // ==========================================
-// EXPORT CSV
+// EXPORT CSV DENGAN FILTER
 // ==========================================
+function populateExportFilters() {
+  const years = new Set();
+  [...db.pemasukan, ...db.pengeluaran].forEach(item => {
+    if(item.tanggal) years.add(item.tanggal.substring(0,4));
+  });
+  
+  const currentYear = new Date().getFullYear().toString();
+  years.add(currentYear);
+  
+  const elTahun = document.getElementById('exp-tahun');
+  let opts = '<option value="semua">Semua Tahun</option>';
+  Array.from(years).sort().reverse().forEach(y => {
+    opts += `<option value="${y}">${y}</option>`;
+  });
+  elTahun.innerHTML = opts;
+  elTahun.value = currentYear;
+  
+  const elBulan = document.getElementById('exp-bulan');
+  elBulan.value = String(new Date().getMonth() + 1).padStart(2, '0');
+}
+
 function exportCSV() {
+  const bulanOpt = document.getElementById('exp-bulan').value;
+  const tahunOpt = document.getElementById('exp-tahun').value;
+
   let csv = "Tanggal,Tipe,Kategori,Nama/Keterangan,Pemasukan,Pengeluaran\n";
   
-  db.pemasukan.forEach(p => {
+  const filterFn = (item) => {
+    if(!item.tanggal) return false;
+    const [y, m] = item.tanggal.split('-');
+    if(tahunOpt !== 'semua' && y !== tahunOpt) return false;
+    if(bulanOpt !== 'semua' && m !== bulanOpt) return false;
+    return true;
+  };
+  
+  db.pemasukan.filter(filterFn).forEach(p => {
     csv += `${p.tanggal},Pemasukan,Wali Murid,"${p.wali_nama} (Murid: ${p.murid_nama||'-'})",${p.jumlah},0\n`;
   });
   
-  db.pengeluaran.forEach(o => {
+  db.pengeluaran.filter(filterFn).forEach(o => {
     csv += `${o.tanggal},Pengeluaran,${o.kategori},"${o.penerima_nama}",0,${o.jumlah}\n`;
   });
+
+  const blnName = bulanOpt !== 'semua' ? document.querySelector(`#exp-bulan option[value="${bulanOpt}"]`).text : 'SemuaBulan';
+  const fileName = `Laporan_SAINSPIQ_${blnName}_${tahunOpt}.csv`;
 
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.setAttribute("href", url);
-  a.setAttribute("download", "Laporan_Keuangan_SAINSPIQ.csv");
+  a.setAttribute("download", fileName);
   a.click();
 }
 </script>
