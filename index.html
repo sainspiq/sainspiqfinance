@@ -4,14 +4,22 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Keuangan SAINSPIQ - FINANCE</title>
+
 <!-- Font Modern: Plus Jakarta Sans -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-<!-- Library Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Library jsPDF untuk Cetak Laporan PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
 <style>
+/* CSS Reset & Hide Blogger Elements */
 *{box-sizing:border-box;margin:0;padding:0}
+body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:var(--txt); overflow-x:hidden; }
+#navbar-iframe, .bg-photo-overlay, .Header, .widget, .blog-admin { display: none !important; }
+
 :root{
   --green:#0F6E56;--green-d:#085041;--green-l:#E1F5EE;--green-t:#9FE1CB;
   --amber:#854F0B;--amber-l:#FAEEDA;--amber-t:#FAC775;
@@ -20,8 +28,11 @@
   --txt:#1A2E28;--txt2:#6B8A80;--txt3:#A8BDB7;
   --shadow:0 6px 16px rgba(0,0,0,.04);
 }
-body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh; overflow-x:hidden;}
-.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg); position:relative;}
+
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg); position:relative; box-shadow: 0 0 20px rgba(0,0,0,0.05);}
+
+/* THUMBNAIL BLOGGER HIDDEN */
+.blogger-thumbnail { display: none; }
 
 /* LOGIN SCREEN */
 #login-screen { position: absolute; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.3s ease; }
@@ -32,14 +43,14 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .login-sub { font-size: 13px; color: var(--txt2); margin-bottom: 24px; }
 .login-err { color: var(--red); font-size: 12px; background: var(--red-l); padding: 10px; border-radius: 8px; margin-bottom: 16px; display: none; font-weight: 600;}
 
-/* HEADER - HANYA UNTUK JUDUL & TOMBOL KELUAR */
+/* HEADER */
 .header {background: linear-gradient(145deg, #021a14 0%, #074737 100%); padding: 24px 20px; color: #fff; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); position: relative; z-index: 1;}
 .hd-top{display:flex;align-items:center;justify-content:space-between;}
 .hd-brand{font-size:20px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
 .btn-logout { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; font-family: inherit;}
 .btn-logout:hover { background:rgba(255,255,255,0.25); }
 
-/* SUMMARY CARDS (DI PISAH SEBAGAI LAMAN DI BAWAH HEADER) */
+/* SUMMARY CARDS */
 .sc-wrap { padding: 20px 20px 0; }
 .sc-header-title { font-size: 14px; font-weight: 800; color: var(--txt); margin-bottom: 12px; }
 .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0}
@@ -50,13 +61,11 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .sc-val.warn{color:var(--amber)}
 .sc-val.red{color:var(--red)}
 
-/* NAV PILLS (GRID 4) - UKURAN DIPERKECIL */
+/* NAV PILLS */
 .nav-pills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-top: 20px; position: relative; z-index: 10; }
 .nav-pills::-webkit-scrollbar{display:none}
-
 .pill { padding: 14px 10px; border-radius: 16px; font-size: 12px; font-weight: 700; border: 2px solid transparent; cursor: pointer; background: var(--card); color: var(--txt2); transition: all .2s; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: var(--shadow); text-align: center; }
 .pill .p-ico { font-size: 24px; margin-bottom: 4px; }
-
 .pill.active { background: var(--green); color: #fff; border-color: var(--green); box-shadow: 0 6px 16px rgba(15,110,86,.3); }
 .pill.active .p-ico { transform: scale(1.05); }
 
@@ -66,19 +75,17 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 .content.show{display:block}
 @keyframes fadeIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
 
-/* SECTION HEAD (STICKY) */
+/* SECTION HEAD */
 .sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:4px}
 .sec-title{font-size:16px;font-weight:800;color:var(--txt)}
 .btn-add{background:var(--green);color:#fff;border:none;border-radius:22px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(15,110,86,.28); transition: transform 0.1s;}
 .btn-add:active {transform: scale(0.95);}
-
 .sticky { position: sticky; top: 0; background: rgba(242, 245, 244, 0.95); backdrop-filter: blur(4px); z-index: 50; padding: 16px 0 12px; margin-top: -16px; border-bottom: 1px solid transparent;}
 
 /* GRID 4 PENGELUARAN */
 .grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
 .grid-item { background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; display:flex; flex-direction: column; align-items: center; justify-content: center; gap:8px;}
 .grid-item:hover { border-color: var(--green); background: var(--green-l); transform: translateY(-2px); }
-.grid-item:active { transform: translateY(0); }
 .g-ico { font-size: 26px; }
 .g-lbl { font-size: 13px; font-weight: 700; color: var(--txt); }
 
@@ -118,17 +125,32 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 
 /* LOADER */
 .loader-ui { display: none; text-align:center; padding: 20px; font-size: 14px; font-weight: 700; color: var(--green); }
+.loader-full { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); font-weight: 800; color: var(--green); }
 
 /* LAPORAN & MASTER DATA */
 .recap-card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:12px;border:1px solid var(--border); box-shadow: var(--shadow);}
 .recap-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:14px; font-weight:500;}
 .recap-row.total{border-top:2px dashed var(--border);margin-top:8px;padding-top:14px;font-size:16px;font-weight:800}
 .master-section{margin-bottom:24px}
-.person-card{background:var(--card);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.03);}
+.person-card{background:var(--card);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;border:1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.03);}
+
+/* PDF EXPORT AREA UI */
+.export-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+.filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;}
 </style>
 </head>
 <body>
+
+<!-- Thumbnail untuk Blogger -->
+<img class="blogger-thumbnail" src="https://via.placeholder.com/600x400/0F6E56/ffffff?text=Aplikasi+Keuangan+Sainspiq" alt="Thumbnail">
+
 <div class="app">
+
+  <!-- FULL PAGE LOADER -->
+  <div id="full-loader" class="loader-full">
+    <div style="font-size:40px; margin-bottom:10px;">⏳</div>
+    <div id="loader-text">Memproses...</div>
+  </div>
 
   <!-- SCREEN LOGIN -->
   <div id="login-screen">
@@ -149,35 +171,32 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
       <button class="btn-save" onclick="doLogin()" id="btn-login">Masuk Sekarang</button>
       
       <div style="margin-top: 20px; font-size: 12px; font-weight:600; color: var(--txt3);">
-        *Gunakan admin / edudigital pada Mode Preview
+        *Mode Preview: admin / edudigital
       </div>
     </div>
   </div>
 
-  <!-- APLIKASI UTAMA (Disembunyikan sebelum login) -->
+  <!-- APLIKASI UTAMA -->
   <div id="main-app">
-    <!-- HEADER PISAH -->
     <div class="header">
       <div class="hd-top">
-        <div>
-          <div class="hd-brand">SAINSPIQ FINANCE</div>
-        </div>
+        <div class="hd-brand">SAINSPIQ FINANCE</div>
         <button class="btn-logout" onclick="doLogout()">&#10006; Keluar</button>
       </div>
     </div>
 
-    <!-- SUMMARY CARDS (DATA LIVE BULAN INI) DI LAMAN -->
+    <!-- SUMMARY CARDS -->
     <div class="sc-wrap">
       <div class="sc-header-title">Ringkasan Bulan Ini</div>
       <div class="summary" id="summary-bar">
         <div class="sc"><div class="sc-lbl">Total Omset</div><div class="sc-val profit" id="s-omset">Rp 0</div></div>
         <div class="sc"><div class="sc-lbl">Keuntungan</div><div class="sc-val profit" id="s-untung">Rp 0</div></div>
         <div class="sc"><div class="sc-lbl">Total Keluar</div><div class="sc-val warn" id="s-keluar">Rp 0</div></div>
-        <div class="sc"><div class="sc-lbl">Bulan Ini</div><div class="sc-val" id="s-bulan" style="font-size:16px; color:var(--txt2);">Mei 2026</div></div>
+        <div class="sc"><div class="sc-lbl">Bulan Ini</div><div class="sc-val" id="s-bulan" style="font-size:16px; color:var(--txt2);">Bulan</div></div>
       </div>
     </div>
 
-    <!-- NAV PILLS (GRID 4 Diperkecil) -->
+    <!-- NAV PILLS -->
     <div class="nav-pills" id="nav-pills">
       <div class="pill active" onclick="switchPage('laporan')"><div class="p-ico">&#128202;</div>Dashboard</div>
       <div class="pill" onclick="switchPage('pemasukan')"><div class="p-ico">&#128176;</div>Pemasukan</div>
@@ -199,34 +218,29 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
         <div class="recap-row total"><div>Keuntungan Bersih</div><div id="r-untung" style="font-size:18px;font-weight:800;color:var(--green)">Rp 0</div></div>
       </div>
       
-      <!-- SEKSI EXPORT DENGAN PILIHAN BULAN & TAHUN -->
-      <div class="sec-title" style="margin-top:24px;margin-bottom:12px">Export Laporan CSV</div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
-        <select id="exp-bulan" class="finp" style="padding:12px;">
-          <option value="semua">Semua Bulan</option>
-          <option value="01">Januari</option>
-          <option value="02">Februari</option>
-          <option value="03">Maret</option>
-          <option value="04">April</option>
-          <option value="05">Mei</option>
-          <option value="06">Juni</option>
-          <option value="07">Juli</option>
-          <option value="08">Agustus</option>
-          <option value="09">September</option>
-          <option value="10">Oktober</option>
-          <option value="11">November</option>
-          <option value="12">Desember</option>
-        </select>
-        <select id="exp-tahun" class="finp" style="padding:12px;">
-          <option value="semua">Semua Tahun</option>
-        </select>
+      <!-- EXPORT PDF SECTION -->
+      <div class="sec-title" style="margin-top:24px;margin-bottom:12px">Cetak Laporan PDF</div>
+      <div class="export-card">
+        <div class="filter-grid">
+          <select id="exp-bulan" class="finp" style="padding:12px;">
+            <option value="semua">Semua Bulan</option>
+            <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option>
+            <option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option>
+            <option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option>
+            <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+          </select>
+          <select id="exp-tahun" class="finp" style="padding:12px;">
+            <option value="semua">Semua Tahun</option>
+          </select>
+        </div>
+        <button class="btn-save" style="margin-top:0;background:var(--green);color:#fff;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:8px" onclick="exportPDF()">
+          <span>&#128196;</span> Download Laporan PDF
+        </button>
       </div>
-      <button class="btn-save" style="margin-top:0;background:var(--green);color:#fff;box-shadow:none" onclick="exportCSV()">&#11123; Download Laporan CSV</button>
     </div>
 
     <!-- PAGE: PEMASUKAN -->
     <div class="content" id="page-pemasukan">
-      <!-- sec-head dibuat sticky -->
       <div class="sec-head sticky">
         <div class="sec-title">Data Pemasukan</div>
         <button class="btn-add" onclick="openModal('pemasukan')">+ Tambah</button>
@@ -234,31 +248,15 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
       <div id="list-pemasukan"></div>
     </div>
 
-    <!-- PAGE: PENGELUARAN (4 GRID) -->
+    <!-- PAGE: PENGELUARAN -->
     <div class="content" id="page-pengeluaran">
       <div class="sec-title" style="margin-bottom:16px;">Catat Pengeluaran</div>
-      
-      <!-- 4 GRID MENU -->
       <div class="grid-4">
-        <div class="grid-item" onclick="openModalPengeluaran('Gaji Guru')">
-          <div class="g-ico">&#128105;&#8205;&#127979;</div>
-          <div class="g-lbl">Gaji Guru</div>
-        </div>
-        <div class="grid-item" onclick="openModalPengeluaran('Operasional')">
-          <div class="g-ico">&#128161;</div>
-          <div class="g-lbl">Operasional</div>
-        </div>
-        <div class="grid-item" onclick="openModalPengeluaran('Inventaris')">
-          <div class="g-ico">&#128187;</div>
-          <div class="g-lbl">Inventaris</div>
-        </div>
-        <div class="grid-item" onclick="openModalPengeluaran('Lain-lain')">
-          <div class="g-ico">&#128230;</div>
-          <div class="g-lbl">Lain-lain</div>
-        </div>
+        <div class="grid-item" onclick="openModalPengeluaran('Gaji Guru')"><div class="g-ico">&#128105;&#8205;&#127979;</div><div class="g-lbl">Gaji Guru</div></div>
+        <div class="grid-item" onclick="openModalPengeluaran('Operasional')"><div class="g-ico">&#128161;</div><div class="g-lbl">Operasional</div></div>
+        <div class="grid-item" onclick="openModalPengeluaran('Inventaris')"><div class="g-ico">&#128187;</div><div class="g-lbl">Inventaris</div></div>
+        <div class="grid-item" onclick="openModalPengeluaran('Lain-lain')"><div class="g-ico">&#128230;</div><div class="g-lbl">Lain-lain</div></div>
       </div>
-
-      <!-- sec-head dibuat sticky -->
       <div class="sec-head sticky">
         <div class="sec-title">Riwayat Pengeluaran</div>
       </div>
@@ -268,7 +266,6 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
     <!-- PAGE: MASTER DATA -->
     <div class="content" id="page-master">
       <div class="master-section">
-        <!-- sec-head dibuat sticky -->
         <div class="sec-head sticky">
           <div class="sec-title">&#128101; Data Wali Murid</div>
           <button class="btn-add" onclick="openModal('wali')">+ Tambah</button>
@@ -276,7 +273,6 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
         <div id="list-wali"></div>
       </div>
       <div class="master-section">
-        <!-- sec-head dibuat sticky -->
         <div class="sec-head sticky">
           <div class="sec-title">&#128105;&#8205;&#127979; Data Guru</div>
           <button class="btn-add" onclick="openModal('guru')">+ Tambah</button>
@@ -286,71 +282,73 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
     </div>
 
   </div> <!-- End Main App -->
-
 </div>
 
-<!-- MODAL PEMASUKAN -->
+<!-- MODALS -->
+
+<!-- PEMASUKAN -->
 <div class="overlay" id="ov-pemasukan" onclick="closeBg(event,'pemasukan')">
 <div class="modal">
   <div class="mhandle"></div>
   <div class="mtitle">Catat Pemasukan</div>
   <div class="fg"><label class="flbl">Wali Murid</label>
-    <select class="finp" id="p-wali"><option value="">-- Pilih Wali Murid --</option></select></div>
+    <select class="finp" id="p-wali" onchange="autoFillMurid()"><option value="">-- Pilih Wali Murid --</option></select></div>
   <div class="fg"><label class="flbl">Nama Murid</label>
-    <input class="finp" id="p-murid" placeholder="Nama murid"/></div>
+    <input class="finp" id="p-murid" placeholder="Nama murid (Otomatis jika ada)"/></div>
   <div class="fg"><label class="flbl">Jumlah Pembayaran (Rp)</label>
     <input class="finp" id="p-jumlah" type="number" placeholder="500000" min="0"/></div>
   <div class="fg"><label class="flbl">Tanggal</label>
     <input class="finp" id="p-tanggal" type="date"/></div>
   <div class="fg"><label class="flbl">Keterangan</label>
-    <input class="finp" id="p-ket" placeholder="Biaya bulan ini"/></div>
+    <input class="finp" id="p-ket" placeholder="Biaya SPP bulan..."/></div>
   <button class="btn-save" onclick="saveData('pemasukan')">Simpan Pemasukan</button>
   <button class="btn-cn" onclick="closeModal('pemasukan')">Batal</button>
 </div></div>
 
-<!-- MODAL PENGELUARAN DINAMIS -->
+<!-- PENGELUARAN -->
 <div class="overlay" id="ov-pengeluaran" onclick="closeBg(event,'pengeluaran')">
 <div class="modal">
   <div class="mhandle"></div>
   <div class="mtitle" id="out-title">Catat Pengeluaran</div>
-  
   <input type="hidden" id="out-kategori" value="">
-  
-  <!-- Jika Gaji, tampilkan dropdown guru. Jika lain, text input -->
   <div class="fg" id="out-penerima-wrapper">
     <label class="flbl" id="out-penerima-lbl">Penerima / Keterangan Singkat</label>
-    <div id="out-penerima-input-area">
-      <!-- Diisi oleh JS -->
-    </div>
+    <div id="out-penerima-input-area"></div>
   </div>
-
   <div class="fg"><label class="flbl">Jumlah (Rp)</label>
     <input class="finp" id="out-jumlah" type="number" placeholder="Contoh: 150000" min="0"/></div>
   <div class="fg"><label class="flbl">Tanggal</label>
     <input class="finp" id="out-tanggal" type="date"/></div>
   <div class="fg"><label class="flbl">Keterangan Tambahan</label>
     <input class="finp" id="out-ket" placeholder="Opsional"/></div>
-  
   <button class="btn-save" onclick="saveData('pengeluaran')">Simpan Pengeluaran</button>
   <button class="btn-cn" onclick="closeModal('pengeluaran')">Batal</button>
 </div></div>
 
-<!-- MODAL TAMBAH WALI -->
+<!-- WALI MURID (DIREVISI: Tambah field Murid) -->
 <div class="overlay" id="ov-wali" onclick="closeBg(event,'wali')">
 <div class="modal">
   <div class="mhandle"></div>
   <div class="mtitle">Tambah Wali Murid</div>
   <div class="fg"><label class="flbl">Nama Wali Murid</label>
     <input class="finp" id="w-nama" placeholder="Bpk. Ahmad"/></div>
-  <div class="fg"><label class="flbl">No. HP</label>
+  <div class="fg"><label class="flbl">No. HP Wali</label>
     <input class="finp" id="w-hp" placeholder="08xxxxxxxxxx"/></div>
+  
+  <div style="height:1px; background:var(--border); margin:20px 0;"></div>
+  
+  <div class="fg"><label class="flbl" style="color:var(--green)">Nama Murid (Anak)</label>
+    <input class="finp" id="w-nama-murid" placeholder="Nama lengkap siswa"/></div>
+  <div class="fg"><label class="flbl" style="color:var(--green)">No. HP Murid (Opsional)</label>
+    <input class="finp" id="w-hp-murid" placeholder="08xxxxxxxxxx"/></div>
+    
   <div class="fg"><label class="flbl">Alamat</label>
     <input class="finp" id="w-alamat" placeholder="Jl. Mawar No.5"/></div>
-  <button class="btn-save" onclick="saveData('wali')">Simpan Wali</button>
+  <button class="btn-save" onclick="saveData('wali')">Simpan Data</button>
   <button class="btn-cn" onclick="closeModal('wali')">Batal</button>
 </div></div>
 
-<!-- MODAL TAMBAH GURU -->
+<!-- GURU -->
 <div class="overlay" id="ov-guru" onclick="closeBg(event,'guru')">
 <div class="modal">
   <div class="mhandle"></div>
@@ -369,31 +367,18 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif
 // ==========================================
 // KONFIGURASI APLIKASI
 // ==========================================
-// Ubah menjadi false untuk menggunakan Supabase di Production (GitHub Pages)
+// Ubah IS_PREVIEW ke false jika sudah siap dipublish dengan Database GAS asli
 const IS_PREVIEW = true; 
+const GAS_URL = "URL_WEB_APP_GAS_ANDA_DISINI";
 
-// Konfigurasi Supabase (Dapatkan dari Project Settings > API di Dashboard Supabase)
-const SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co";
-const SUPABASE_KEY = "YOUR_ANON_KEY"; 
-
-let supabaseClient = null;
-if (!IS_PREVIEW) {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-}
-
-// State Database Lokal (Digunakan penuh jika IS_PREVIEW = true)
 let db = {
-  pemasukan: [], 
-  pengeluaran: [], 
-  master_wali: [], 
-  master_guru: []
+  pemasukan: [], pengeluaran: [], master_wali: [], master_guru: []
 };
-
-// ==========================================
-// LOGIC AUTENTIKASI (LOGIN / LOGOUT)
-// ==========================================
 let currentUser = null;
 
+// ==========================================
+// AUTENTIKASI LOGIN
+// ==========================================
 async function doLogin() {
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value.trim();
@@ -406,35 +391,28 @@ async function doLogin() {
   errBox.style.display = 'none';
 
   if (IS_PREVIEW) {
-    // Login Dummy Local
     setTimeout(() => {
       if ((user === 'admin' && pass === 'edudigital') || (user === 'peserta' && pass === 'edudigital')) {
         currentUser = { username: user, role: user === 'admin' ? 'admin' : 'staff' };
         loginSuccess();
       } else {
         btn.innerText = "Masuk Sekarang";
-        errBox.style.display = 'block';
-        errBox.innerText = "Username/Password salah!";
+        errBox.style.display = 'block'; errBox.innerText = "Username/Password salah!";
       }
     }, 800);
   } else {
-    // Login Supabase (Menggunakan tabel users kustom atau Auth bawaan)
-    // Untuk kesederhanaan, kita periksa dari tabel 'users' buatan kita (plain password untuk contoh edukasi)
-    const { data, error } = await supabaseClient
-      .from('users')
-      .select('*')
-      .eq('username', user)
-      .eq('password', pass)
-      .single();
-
-    btn.innerText = "Masuk Sekarang";
-
-    if (error || !data) {
-      errBox.style.display = 'block';
-      errBox.innerText = "Kredensial tidak ditemukan di Database";
-    } else {
-      currentUser = { username: data.username, role: data.role };
-      loginSuccess();
+    try {
+      const res = await callGAS("login", { username: user, password: pass });
+      if(res.success) {
+        currentUser = res.data;
+        loginSuccess();
+      } else {
+        btn.innerText = "Masuk Sekarang";
+        errBox.style.display = 'block'; errBox.innerText = "Username/Password salah!";
+      }
+    } catch(e) {
+      btn.innerText = "Masuk Sekarang";
+      errBox.style.display = 'block'; errBox.innerText = "Terjadi kesalahan koneksi database!";
     }
   }
 }
@@ -454,6 +432,27 @@ function doLogout() {
 }
 
 // ==========================================
+// KONEKSI GOOGLE APPS SCRIPT (GAS API)
+// ==========================================
+async function callGAS(action, payload = {}) {
+  const url = GAS_URL + "?action=" + action;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  });
+  return await response.json();
+}
+
+function showFullLoader(text) {
+  document.getElementById('loader-text').innerText = text;
+  document.getElementById('full-loader').style.display = 'flex';
+}
+function hideFullLoader() {
+  document.getElementById('full-loader').style.display = 'none';
+}
+
+// ==========================================
 // INIT & FETCH DATA
 // ==========================================
 async function initApp() {
@@ -466,31 +465,29 @@ async function fetchData() {
   loader.style.display = 'block';
 
   if (IS_PREVIEW) {
-    // Generate Dummy Data agar Preview terlihat hidup
     if(db.pemasukan.length === 0){
-        db.master_wali = [{id:1, nama:'Bpk Ahmad', hp:'081', alamat:'Jl. A'}, {id:2, nama:'Ibu Budi', hp:'082', alamat:'Jl. B'}];
+        // Dummy data lengkap sesuai revisi
+        db.master_wali = [
+            {id:1, nama:'Bpk Ahmad', hp:'0811', alamat:'Jl. A', nama_murid: 'Andi Supri', hp_murid: '0855'}, 
+            {id:2, nama:'Ibu Budi', hp:'0822', alamat:'Jl. B', nama_murid: 'Budi Santoso', hp_murid: ''}
+        ];
         db.master_guru = [{id:1, nama:'Bu Siti', mapel:'MTK', hp:'083'}, {id:2, nama:'Pak Eko', mapel:'IPA', hp:'084'}];
         
-        const curDate = new Date().toISOString().split('T')[0]; // Current date
-        db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Budi', jumlah:500000, tanggal: curDate, keterangan: 'Lunas'}];
-        db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: curDate, keterangan: 'Gaji Bulan ini'}];
+        const curDate = new Date().toISOString().split('T')[0];
+        db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Andi Supri', jumlah:500000, tanggal: curDate, keterangan: 'SPP Mei'}];
+        db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: curDate, keterangan: 'Gaji'}];
     }
   } else {
-    // Fetch dari Supabase secara Paralel
     try {
-      const [resPem, resPeng, resWali, resGuru] = await Promise.all([
-        supabaseClient.from('pemasukan').select('*').order('tanggal', {ascending: false}),
-        supabaseClient.from('pengeluaran').select('*').order('tanggal', {ascending: false}),
-        supabaseClient.from('master_wali').select('*').order('nama', {ascending: true}),
-        supabaseClient.from('master_guru').select('*').order('nama', {ascending: true})
-      ]);
-      
-      db.pemasukan = resPem.data || [];
-      db.pengeluaran = resPeng.data || [];
-      db.master_wali = resWali.data || [];
-      db.master_guru = resGuru.data || [];
-    } catch (e) {
-      alert("Gagal sinkronisasi data dengan Supabase.");
+      const res = await callGAS("fetch_all");
+      if(res.success) {
+        db.pemasukan = res.data.pemasukan;
+        db.pengeluaran = res.data.pengeluaran;
+        db.master_wali = res.data.master_wali;
+        db.master_guru = res.data.master_guru;
+      }
+    } catch(e) {
+      alert("Gagal sinkronisasi data dengan Database GAS.");
     }
   }
   
@@ -500,7 +497,7 @@ async function fetchData() {
 }
 
 // ==========================================
-// UI RENDERERS & HELPERS
+// UI RENDERERS
 // ==========================================
 function fmt(n){ return 'Rp\u00a0' + Math.round(n||0).toLocaleString('id-ID'); }
 function initials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
@@ -513,7 +510,6 @@ function switchPage(page){
   const pills = document.querySelectorAll('.pill');
   pills.forEach((p,i)=> p.classList.toggle('active', ['laporan','pemasukan','pengeluaran','master'][i]===page));
   
-  // Reset scroll to top
   window.scrollTo({top: 0, behavior: 'smooth'});
   renderAll();
 }
@@ -532,7 +528,6 @@ function renderSummaryLive() {
   const currentMonthName = monthNames[date.getMonth()] + ' ' + date.getFullYear();
   const currentMonthPrefix = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   
-  // Hitung khusus bulan ini
   const pBulanIni = db.pemasukan.filter(e => e.tanggal && e.tanggal.startsWith(currentMonthPrefix));
   const oBulanIni = db.pengeluaran.filter(e => e.tanggal && e.tanggal.startsWith(currentMonthPrefix));
   
@@ -540,21 +535,16 @@ function renderSummaryLive() {
   const tKeluar = oBulanIni.reduce((sum, item) => sum + Number(item.jumlah), 0);
   const tUntung = tOmset - tKeluar;
   
-  // Header Summary Laman
   document.getElementById('s-omset').innerText = fmt(tOmset);
   document.getElementById('s-keluar').innerText = fmt(tKeluar);
-  
   const elUntung = document.getElementById('s-untung');
   elUntung.innerText = fmt(tUntung);
   elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'red'); 
-  
   document.getElementById('s-bulan').innerText = currentMonthName;
 }
 
 function renderDashboard() {
-  // Recap Keseluruhan (All-time)
   const tOmset = db.pemasukan.reduce((sum, item) => sum + Number(item.jumlah), 0);
-  
   const gajiArr = db.pengeluaran.filter(e => e.kategori === 'Gaji Guru');
   const lainArr = db.pengeluaran.filter(e => e.kategori !== 'Gaji Guru');
   
@@ -563,7 +553,6 @@ function renderDashboard() {
   const tKeluar = tGaji + tLain;
   const tUntung = tOmset - tKeluar;
 
-  // Laporan Lengkap Tab (All-Time)
   document.getElementById('r-omset').innerText = fmt(tOmset);
   document.getElementById('r-gaji').innerText = fmt(tGaji);
   document.getElementById('r-lainnya').innerText = fmt(tLain);
@@ -580,7 +569,6 @@ function renderPemasukan() {
     el.innerHTML = '<div class="empty"><div class="empty-ico">&#128203;</div>Belum ada data pemasukan</div>';
     return;
   }
-  
   el.innerHTML = db.pemasukan.map(e => `
     <div class="card">
       <div class="ava g">${initials(e.wali_nama)}</div>
@@ -600,17 +588,13 @@ function renderPengeluaran() {
     el.innerHTML = '<div class="empty"><div class="empty-ico">&#128184;</div>Belum ada data pengeluaran</div>';
     return;
   }
-  
   const catColor = { 'Gaji Guru': 'a', 'Operasional': 'r', 'Inventaris': 'r', 'Lain-lain': 'r' };
-  
   el.innerHTML = db.pengeluaran.map(e => `
     <div class="card">
       <div class="ava ${catColor[e.kategori]||'r'}">${initials(e.penerima_nama || e.kategori)}</div>
       <div class="ci">
         <div class="cn">${e.penerima_nama || e.kategori}</div>
-        <div class="cm">
-          <span class="cm-badge">${e.kategori}</span>${toDateStr(e.tanggal)}
-        </div>
+        <div class="cm"><span class="cm-badge">${e.kategori}</span>${toDateStr(e.tanggal)}</div>
       </div>
       <div class="ca r">- ${fmt(e.jumlah)}</div>
       <button class="del-btn" onclick="deleteData('pengeluaran', ${e.id})">&#10005;</button>
@@ -619,17 +603,22 @@ function renderPengeluaran() {
 }
 
 function renderMaster() {
-  // WALI
+  // REVISI: Tampilan Data Wali Murid baru
   const elWali = document.getElementById('list-wali');
   elWali.innerHTML = db.master_wali.length ? db.master_wali.map(w => `
     <div class="person-card">
       <div class="ava g">${initials(w.nama)}</div>
-      <div class="ci"><div class="cn">${w.nama}</div><div class="cm">${w.hp||'-'} · ${w.alamat||'-'}</div></div>
-      <button class="del-btn" onclick="deleteData('master_wali', ${w.id})">&#10005;</button>
+      <div class="ci">
+        <div class="cn">${w.nama}</div>
+        <div class="cm" style="font-weight:700; color:var(--txt2);">
+            Siswa: ${w.nama_murid||'-'} ${w.hp_murid ? '('+w.hp_murid+')' : ''}
+        </div>
+        <div class="cm" style="font-size:11px; margin-top:4px;">${w.hp||'-'} · ${w.alamat||'-'}</div>
+      </div>
+      <button class="del-btn" style="margin-top:-5px;" onclick="deleteData('master_wali', ${w.id})">&#10005;</button>
     </div>
   `).join('') : '<div class="empty">Kosong</div>';
 
-  // GURU
   const elGuru = document.getElementById('list-guru');
   elGuru.innerHTML = db.master_guru.length ? db.master_guru.map(g => `
     <div class="person-card">
@@ -656,6 +645,8 @@ function openModal(type) {
   } else if (type === 'wali') {
     document.getElementById('w-nama').value = '';
     document.getElementById('w-hp').value = '';
+    document.getElementById('w-nama-murid').value = '';
+    document.getElementById('w-hp-murid').value = '';
     document.getElementById('w-alamat').value = '';
   } else if (type === 'guru') {
     document.getElementById('gr-nama').value = '';
@@ -665,10 +656,19 @@ function openModal(type) {
   document.getElementById('ov-'+type).classList.add('open');
 }
 
+function autoFillMurid() {
+    const waliName = document.getElementById('p-wali').value;
+    const waliObj = db.master_wali.find(w => w.nama === waliName);
+    if(waliObj && waliObj.nama_murid) {
+        document.getElementById('p-murid').value = waliObj.nama_murid;
+    } else {
+        document.getElementById('p-murid').value = '';
+    }
+}
+
 function openModalPengeluaran(kategori) {
   document.getElementById('out-title').innerText = "Catat " + kategori;
   document.getElementById('out-kategori').value = kategori;
-  
   const wrap = document.getElementById('out-penerima-input-area');
   const lbl = document.getElementById('out-penerima-lbl');
   
@@ -685,19 +685,14 @@ function openModalPengeluaran(kategori) {
   document.getElementById('out-jumlah').value = '';
   document.getElementById('out-tanggal').value = today;
   document.getElementById('out-ket').value = '';
-  
   document.getElementById('ov-pengeluaran').classList.add('open');
 }
 
-function closeModal(type) {
-  document.getElementById('ov-'+type).classList.remove('open');
-}
-function closeBg(e, type) {
-  if(e.target.classList.contains('overlay')) closeModal(type);
-}
+function closeModal(type) { document.getElementById('ov-'+type).classList.remove('open'); }
+function closeBg(e, type) { if(e.target.classList.contains('overlay')) closeModal(type); }
 
 // ==========================================
-// CRUD OPERATIONS (SAVE / DELETE)
+// CRUD OPERATIONS
 // ==========================================
 async function saveData(type) {
   let payload = {};
@@ -720,16 +715,18 @@ async function saveData(type) {
       tanggal: document.getElementById('out-tanggal').value,
       keterangan: document.getElementById('out-ket').value
     };
-    if(!payload.penerima_nama || !payload.jumlah) return alert("Isi Penerima/Keterangan dan Jumlah!");
+    if(!payload.penerima_nama || !payload.jumlah) return alert("Isi Penerima dan Jumlah!");
   }
   else if (type === 'wali') {
     payload = {
       nama: document.getElementById('w-nama').value,
       hp: document.getElementById('w-hp').value,
+      nama_murid: document.getElementById('w-nama-murid').value,
+      hp_murid: document.getElementById('w-hp-murid').value,
       alamat: document.getElementById('w-alamat').value
     };
     if(!payload.nama) return alert("Nama wali wajib diisi!");
-    type = 'master_wali'; // Adjust for DB naming
+    type = 'master_wali';
   }
   else if (type === 'guru') {
     payload = {
@@ -741,49 +738,57 @@ async function saveData(type) {
     type = 'master_guru';
   }
 
-  // EXECUTE SAVE
+  showFullLoader("Menyimpan Data...");
+
   if (IS_PREVIEW) {
     payload.id = Date.now();
     db[type].unshift(payload);
-    closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
-    populateExportFilters();
-    renderAll();
+    setTimeout(() => {
+        closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
+        populateExportFilters();
+        renderAll();
+        hideFullLoader();
+    }, 600);
   } else {
     try {
-      const { data, error } = await supabaseClient.from(type).insert([payload]).select();
-      if(error) throw error;
-      
-      db[type].unshift(data[0]); // Add newly inserted row to local state
-      closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
-      populateExportFilters();
-      renderAll();
+      const res = await callGAS("save_data", { table: type, data: payload });
+      if(res.success) {
+        payload.id = res.inserted_id;
+        db[type].unshift(payload);
+        closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
+        populateExportFilters();
+        renderAll();
+      } else { alert("Gagal menyimpan: " + res.message); }
     } catch(err) {
-      alert("Gagal menyimpan ke database: " + err.message);
+      alert("Kesalahan Jaringan!");
     }
+    hideFullLoader();
   }
 }
 
 async function deleteData(table, id) {
-  if (!confirm("Hapus data ini permanen?")) return;
+  if (!confirm("Hapus data ini secara permanen?")) return;
+  showFullLoader("Menghapus Data...");
 
   if (IS_PREVIEW) {
     db[table] = db[table].filter(item => item.id !== id);
-    renderAll();
+    setTimeout(() => { renderAll(); hideFullLoader(); }, 500);
   } else {
     try {
-      const { error } = await supabaseClient.from(table).delete().eq('id', id);
-      if(error) throw error;
-      
-      db[table] = db[table].filter(item => item.id !== id);
-      renderAll();
+      const res = await callGAS("delete_data", { table: table, id: id });
+      if(res.success) {
+        db[table] = db[table].filter(item => item.id !== id);
+        renderAll();
+      } else { alert("Gagal menghapus: " + res.message); }
     } catch(err) {
-      alert("Gagal menghapus data: " + err.message);
+      alert("Kesalahan Jaringan!");
     }
+    hideFullLoader();
   }
 }
 
 // ==========================================
-// EXPORT CSV DENGAN FILTER
+// EXPORT PDF LENGKAP (jsPDF + autoTable)
 // ==========================================
 function populateExportFilters() {
   const years = new Set();
@@ -796,21 +801,16 @@ function populateExportFilters() {
   
   const elTahun = document.getElementById('exp-tahun');
   let opts = '<option value="semua">Semua Tahun</option>';
-  Array.from(years).sort().reverse().forEach(y => {
-    opts += `<option value="${y}">${y}</option>`;
-  });
+  Array.from(years).sort().reverse().forEach(y => { opts += `<option value="${y}">${y}</option>`; });
   elTahun.innerHTML = opts;
   elTahun.value = currentYear;
   
-  const elBulan = document.getElementById('exp-bulan');
-  elBulan.value = String(new Date().getMonth() + 1).padStart(2, '0');
+  document.getElementById('exp-bulan').value = String(new Date().getMonth() + 1).padStart(2, '0');
 }
 
-function exportCSV() {
+function exportPDF() {
   const bulanOpt = document.getElementById('exp-bulan').value;
   const tahunOpt = document.getElementById('exp-tahun').value;
-
-  let csv = "Tanggal,Tipe,Kategori,Nama/Keterangan,Pemasukan,Pengeluaran\n";
   
   const filterFn = (item) => {
     if(!item.tanggal) return false;
@@ -819,24 +819,78 @@ function exportCSV() {
     if(bulanOpt !== 'semua' && m !== bulanOpt) return false;
     return true;
   };
+
+  const pFiltered = db.pemasukan.filter(filterFn);
+  const oFiltered = db.pengeluaran.filter(filterFn);
   
-  db.pemasukan.filter(filterFn).forEach(p => {
-    csv += `${p.tanggal},Pemasukan,Wali Murid,"${p.wali_nama} (Murid: ${p.murid_nama||'-'})",${p.jumlah},0\n`;
+  let tableRows = [];
+  let tMasuk = 0;
+  let tKeluar = 0;
+
+  pFiltered.forEach(p => {
+    tableRows.push([toDateStr(p.tanggal), 'Pemasukan', 'Wali Murid', p.wali_nama + (p.murid_nama ? ` (${p.murid_nama})` : ''), fmt(p.jumlah), '-']);
+    tMasuk += Number(p.jumlah);
   });
-  
-  db.pengeluaran.filter(filterFn).forEach(o => {
-    csv += `${o.tanggal},Pengeluaran,${o.kategori},"${o.penerima_nama}",0,${o.jumlah}\n`;
+  oFiltered.forEach(o => {
+    tableRows.push([toDateStr(o.tanggal), 'Pengeluaran', o.kategori, o.penerima_nama, '-', fmt(o.jumlah)]);
+    tKeluar += Number(o.jumlah);
   });
 
-  const blnName = bulanOpt !== 'semua' ? document.querySelector(`#exp-bulan option[value="${bulanOpt}"]`).text : 'SemuaBulan';
-  const fileName = `Laporan_SAINSPIQ_${blnName}_${tahunOpt}.csv`;
+  // Urutkan berdasarkan tanggal jika diperlukan, tapi ini cukup
+  
+  const blnName = bulanOpt !== 'semua' ? document.querySelector(`#exp-bulan option[value="${bulanOpt}"]`).text : 'Semua Bulan';
+  const thnName = tahunOpt !== 'semua' ? tahunOpt : 'Semua Tahun';
 
-  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.setAttribute("href", url);
-  a.setAttribute("download", fileName);
-  a.click();
+  // Inisialisasi jsPDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // Header Laporan
+  doc.setFontSize(18);
+  doc.setTextColor(15, 110, 86); // Warna Hijau SAINSPIQ
+  doc.text("Laporan Keuangan", 14, 22);
+  
+  doc.setFontSize(11);
+  doc.setTextColor(50, 50, 50);
+  doc.text("Lembaga: SAINSPIQ FINANCE", 14, 30);
+  doc.text(`Periode: ${blnName} ${thnName}`, 14, 36);
+  
+  // Generate Tabel
+  doc.autoTable({
+    startY: 42,
+    head: [['Tanggal', 'Tipe', 'Kategori', 'Nama/Keterangan', 'Pemasukan', 'Pengeluaran']],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: { fillColor: [15, 110, 86] },
+    styles: { fontSize: 9 },
+    foot: [
+        [{ content: 'TOTAL KESELURUHAN', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, 
+         { content: fmt(tMasuk), styles: { fontStyle: 'bold', textColor: [15, 110, 86] } }, 
+         { content: fmt(tKeluar), styles: { fontStyle: 'bold', textColor: [163, 45, 45] } }]
+    ]
+  });
+
+  // Profit/Loss Info di Bawah Tabel
+  let finalY = doc.lastAutoTable.finalY + 15;
+  const laba = tMasuk - tKeluar;
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text("Ringkasan Keuangan:", 14, finalY);
+  
+  doc.setFontSize(11);
+  doc.text(`Total Pemasukan : ${fmt(tMasuk)}`, 14, finalY + 7);
+  doc.text(`Total Pengeluaran : ${fmt(tKeluar)}`, 14, finalY + 14);
+  
+  if(laba >= 0) {
+      doc.setTextColor(15, 110, 86);
+      doc.text(`Laba / Keuntungan Bersih : ${fmt(laba)}`, 14, finalY + 21);
+  } else {
+      doc.setTextColor(163, 45, 45);
+      doc.text(`Kerugian / Minus : ${fmt(laba)}`, 14, finalY + 21);
+  }
+
+  // Cetak & Download
+  doc.save(`Laporan_Keuangan_Sainspiq_${blnName}_${thnName}.pdf`);
 }
 </script>
 </body>
