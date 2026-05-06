@@ -14,6 +14,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
+<!-- ============================================================
+  SUPABASE JS SDK
+============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 /* CSS Reset & Hide Blogger Elements */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -137,6 +142,10 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 /* PDF EXPORT AREA UI */
 .export-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
 .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;}
+
+/* SUPABASE CONFIG SETUP NOTICE */
+.setup-notice { background: var(--amber-l); border: 1.5px solid var(--amber-t); border-radius: 14px; padding: 14px 16px; margin: 0 20px 16px; font-size: 12px; font-weight: 600; color: var(--amber); display: none; }
+.setup-notice.show { display: block; }
 </style>
 </head>
 <body>
@@ -161,8 +170,8 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
       <div id="login-error" class="login-err">Username atau Password salah!</div>
       
       <div class="fg" style="text-align:left">
-        <label class="flbl">Username</label>
-        <input type="text" id="login-user" class="finp" placeholder="Masukkan username">
+        <label class="flbl">Email / Username</label>
+        <input type="text" id="login-user" class="finp" placeholder="email@contoh.com">
       </div>
       <div class="fg" style="text-align:left">
         <label class="flbl">Password</label>
@@ -171,7 +180,7 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
       <button class="btn-save" onclick="doLogin()" id="btn-login">Masuk Sekarang</button>
       
       <div style="margin-top: 20px; font-size: 12px; font-weight:600; color: var(--txt3);">
-        *Mode Preview: admin / edudigital
+        Login menggunakan akun Supabase Auth Anda
       </div>
     </div>
   </div>
@@ -183,6 +192,11 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
         <div class="hd-brand">SAINSPIQ FINANCE</div>
         <button class="btn-logout" onclick="doLogout()">&#10006; Keluar</button>
       </div>
+    </div>
+
+    <!-- SETUP NOTICE -->
+    <div id="setup-notice" class="setup-notice">
+      ⚠️ Konfigurasi Supabase belum diisi. Edit variabel SUPABASE_URL dan SUPABASE_ANON_KEY di bagian script.
     </div>
 
     <!-- SUMMARY CARDS -->
@@ -325,7 +339,7 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
   <button class="btn-cn" onclick="closeModal('pengeluaran')">Batal</button>
 </div></div>
 
-<!-- WALI MURID (DIREVISI: Tambah field Murid) -->
+<!-- WALI MURID -->
 <div class="overlay" id="ov-wali" onclick="closeBg(event,'wali')">
 <div class="modal">
   <div class="mhandle"></div>
@@ -364,86 +378,147 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 </div></div>
 
 <script>
-// ==========================================
-// KONFIGURASI APLIKASI
-// ==========================================
-// Ubah IS_PREVIEW ke false jika sudah siap dipublish dengan Database GAS asli
-const IS_PREVIEW = true; 
-const GAS_URL = "URL_WEB_APP_GAS_ANDA_DISINI";
+// ============================================================
+//  ██████╗ ██╗   ██╗██████╗  █████╗ ███████╗███████╗
+//  ██╔════╝██║   ██║██╔══██╗██╔══██╗██╔════╝██╔════╝
+//  ███████╗██║   ██║██████╔╝███████║███████╗█████╗
+//  ╚════██║██║   ██║██╔═══╝ ██╔══██║╚════██║██╔══╝
+//  ███████║╚██████╔╝██║     ██║  ██║███████║███████╗
+//  ╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝
+//  KONFIGURASI SUPABASE — WAJIB DIISI
+// ============================================================
 
+const SUPABASE_URL  = "GANTI_DENGAN_URL_SUPABASE_ANDA";
+// Contoh: "https://xyzabcdef.supabase.co"
+
+const SUPABASE_ANON_KEY = "GANTI_DENGAN_ANON_KEY_SUPABASE_ANDA";
+// Contoh: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+// ============================================================
+//  NAMA TABEL DI SUPABASE (sesuaikan jika berbeda)
+// ============================================================
+const TABLES = {
+  pemasukan:    'pemasukan',
+  pengeluaran:  'pengeluaran',
+  master_wali:  'master_wali',
+  master_guru:  'master_guru',
+};
+
+// ============================================================
+//  INISIALISASI SUPABASE CLIENT
+// ============================================================
+let supabase = null;
+let configValid = false;
+
+function initSupabase() {
+  if (SUPABASE_URL.includes('GANTI') || SUPABASE_ANON_KEY.includes('GANTI')) {
+    console.warn("⚠️ Supabase belum dikonfigurasi! Isi SUPABASE_URL dan SUPABASE_ANON_KEY.");
+    document.getElementById('setup-notice').classList.add('show');
+    return false;
+  }
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    configValid = true;
+    return true;
+  } catch(e) {
+    console.error("Gagal init Supabase:", e);
+    return false;
+  }
+}
+
+// ============================================================
+//  STATE LOKAL
+// ============================================================
 let db = {
   pemasukan: [], pengeluaran: [], master_wali: [], master_guru: []
 };
 let currentUser = null;
 
-// ==========================================
-// AUTENTIKASI LOGIN
-// ==========================================
+// ============================================================
+//  AUTENTIKASI — SUPABASE AUTH
+// ============================================================
 async function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value.trim();
-  const errBox = document.getElementById('login-error');
-  const btn = document.getElementById('btn-login');
+  const userInput = document.getElementById('login-user').value.trim();
+  const pass      = document.getElementById('login-pass').value.trim();
+  const errBox    = document.getElementById('login-error');
+  const btn       = document.getElementById('btn-login');
 
-  if (!user || !pass) { errBox.style.display = 'block'; errBox.innerText = "Isi username & password"; return; }
+  if (!userInput || !pass) {
+    errBox.style.display = 'block';
+    errBox.innerText = "Isi email/username & password!";
+    return;
+  }
 
   btn.innerText = "Memeriksa...";
   errBox.style.display = 'none';
 
-  if (IS_PREVIEW) {
+  if (!configValid) {
+    // Mode demo jika Supabase belum dikonfigurasi
     setTimeout(() => {
-      if ((user === 'admin' && pass === 'edudigital') || (user === 'peserta' && pass === 'edudigital')) {
-        currentUser = { username: user, role: user === 'admin' ? 'admin' : 'staff' };
+      if ((userInput === 'admin' && pass === 'edudigital') || (userInput === 'peserta' && pass === 'edudigital')) {
+        currentUser = { username: userInput, role: userInput === 'admin' ? 'admin' : 'staff' };
         loginSuccess();
       } else {
         btn.innerText = "Masuk Sekarang";
-        errBox.style.display = 'block'; errBox.innerText = "Username/Password salah!";
+        errBox.style.display = 'block';
+        errBox.innerText = "Username/Password salah! (Mode Demo: admin/edudigital)";
       }
-    }, 800);
-  } else {
-    try {
-      const res = await callGAS("login", { username: user, password: pass });
-      if(res.success) {
-        currentUser = res.data;
-        loginSuccess();
-      } else {
-        btn.innerText = "Masuk Sekarang";
-        errBox.style.display = 'block'; errBox.innerText = "Username/Password salah!";
-      }
-    } catch(e) {
-      btn.innerText = "Masuk Sekarang";
-      errBox.style.display = 'block'; errBox.innerText = "Terjadi kesalahan koneksi database!";
-    }
+    }, 500);
+    return;
+  }
+
+  // Supabase Auth — login dengan email + password
+  // Jika user memasukkan username (bukan email), tambahkan domain dummy
+  const email = userInput.includes('@') ? userInput : userInput + '@sainspiq.local';
+  
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    currentUser = { username: data.user.email, role: 'user', id: data.user.id };
+    loginSuccess();
+  } catch(e) {
+    btn.innerText = "Masuk Sekarang";
+    errBox.style.display = 'block';
+    errBox.innerText = "Login gagal: " + (e.message || "Periksa email & password Anda.");
   }
 }
 
-function loginSuccess() {
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('main-app').style.display = 'flex';
-  initApp();
-}
-
-function doLogout() {
+async function doLogout() {
+  if (configValid && supabase) {
+    await supabase.auth.signOut();
+  }
   currentUser = null;
+  db = { pemasukan: [], pengeluaran: [], master_wali: [], master_guru: [] };
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
 }
 
-// ==========================================
-// KONEKSI GOOGLE APPS SCRIPT (GAS API)
-// ==========================================
-async function callGAS(action, payload = {}) {
-  const url = GAS_URL + "?action=" + action;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {"Content-Type": "text/plain;charset=utf-8"},
-    body: JSON.stringify(payload)
-  });
-  return await response.json();
+function loginSuccess() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('main-app').style.display = 'flex';
+  document.getElementById('btn-login').innerText = 'Masuk Sekarang';
+  initApp();
 }
 
+// ============================================================
+//  CEK SESI SAAT HALAMAN DIMUAT (Auto-login jika sudah login)
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  initSupabase();
+  if (configValid) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = { username: session.user.email, role: 'user', id: session.user.id };
+      loginSuccess();
+    }
+  }
+});
+
+// ============================================================
+//  LOADER HELPERS
+// ============================================================
 function showFullLoader(text) {
   document.getElementById('loader-text').innerText = text;
   document.getElementById('full-loader').style.display = 'flex';
@@ -452,9 +527,9 @@ function hideFullLoader() {
   document.getElementById('full-loader').style.display = 'none';
 }
 
-// ==========================================
-// INIT & FETCH DATA
-// ==========================================
+// ============================================================
+//  INIT & FETCH DATA DARI SUPABASE
+// ============================================================
 async function initApp() {
   switchPage('laporan');
   await fetchData();
@@ -464,41 +539,156 @@ async function fetchData() {
   const loader = document.getElementById('global-loader');
   loader.style.display = 'block';
 
-  if (IS_PREVIEW) {
-    if(db.pemasukan.length === 0){
-        // Dummy data lengkap sesuai revisi
-        db.master_wali = [
-            {id:1, nama:'Bpk Ahmad', hp:'0811', alamat:'Jl. A', nama_murid: 'Andi Supri', hp_murid: '0855'}, 
-            {id:2, nama:'Ibu Budi', hp:'0822', alamat:'Jl. B', nama_murid: 'Budi Santoso', hp_murid: ''}
-        ];
-        db.master_guru = [{id:1, nama:'Bu Siti', mapel:'MTK', hp:'083'}, {id:2, nama:'Pak Eko', mapel:'IPA', hp:'084'}];
-        
-        const curDate = new Date().toISOString().split('T')[0];
-        db.pemasukan = [{id:101, wali_nama:'Bpk Ahmad', murid_nama:'Andi Supri', jumlah:500000, tanggal: curDate, keterangan: 'SPP Mei'}];
-        db.pengeluaran = [{id:201, kategori:'Gaji Guru', penerima_nama:'Bu Siti', jumlah:300000, tanggal: curDate, keterangan: 'Gaji'}];
-    }
+  if (!configValid) {
+    // Data demo
+    db.master_wali  = [{id:1,nama:'Bpk Ahmad',hp:'0811',alamat:'Jl. A',nama_murid:'Andi Supri',hp_murid:'0855'},
+                       {id:2,nama:'Ibu Budi', hp:'0822',alamat:'Jl. B',nama_murid:'Budi Santoso',hp_murid:''}];
+    db.master_guru  = [{id:1,nama:'Bu Siti',mapel:'MTK',hp:'083'},{id:2,nama:'Pak Eko',mapel:'IPA',hp:'084'}];
+    const curDate   = new Date().toISOString().split('T')[0];
+    db.pemasukan    = [{id:101,wali_nama:'Bpk Ahmad',murid_nama:'Andi Supri',jumlah:500000,tanggal:curDate,keterangan:'SPP Mei'}];
+    db.pengeluaran  = [{id:201,kategori:'Gaji Guru',penerima_nama:'Bu Siti',jumlah:300000,tanggal:curDate,keterangan:'Gaji'}];
   } else {
     try {
-      const res = await callGAS("fetch_all");
-      if(res.success) {
-        db.pemasukan = res.data.pemasukan;
-        db.pengeluaran = res.data.pengeluaran;
-        db.master_wali = res.data.master_wali;
-        db.master_guru = res.data.master_guru;
-      }
+      // Fetch semua tabel secara paralel
+      const [resWali, resGuru, resPemasukan, resPengeluaran] = await Promise.all([
+        supabase.from(TABLES.master_wali).select('*').order('created_at', { ascending: false }),
+        supabase.from(TABLES.master_guru).select('*').order('created_at', { ascending: false }),
+        supabase.from(TABLES.pemasukan).select('*').order('tanggal', { ascending: false }),
+        supabase.from(TABLES.pengeluaran).select('*').order('tanggal', { ascending: false }),
+      ]);
+
+      if (resWali.error)       throw resWali.error;
+      if (resGuru.error)       throw resGuru.error;
+      if (resPemasukan.error)  throw resPemasukan.error;
+      if (resPengeluaran.error) throw resPengeluaran.error;
+
+      db.master_wali  = resWali.data        || [];
+      db.master_guru  = resGuru.data        || [];
+      db.pemasukan    = resPemasukan.data   || [];
+      db.pengeluaran  = resPengeluaran.data || [];
+
     } catch(e) {
-      alert("Gagal sinkronisasi data dengan Database GAS.");
+      alert("Gagal sinkronisasi data: " + (e.message || e));
     }
   }
-  
+
   populateExportFilters();
   loader.style.display = 'none';
   renderAll();
 }
 
-// ==========================================
-// UI RENDERERS
-// ==========================================
+// ============================================================
+//  SIMPAN DATA KE SUPABASE
+// ============================================================
+async function saveData(type) {
+  let payload = {};
+  let table   = type;
+
+  if (type === 'pemasukan') {
+    payload = {
+      wali_nama:   document.getElementById('p-wali').value,
+      murid_nama:  document.getElementById('p-murid').value,
+      jumlah:      Number(document.getElementById('p-jumlah').value),
+      tanggal:     document.getElementById('p-tanggal').value,
+      keterangan:  document.getElementById('p-ket').value,
+    };
+    if (!payload.wali_nama || !payload.jumlah) return alert("Pilih Wali dan isi jumlah!");
+  }
+  else if (type === 'pengeluaran') {
+    payload = {
+      kategori:      document.getElementById('out-kategori').value,
+      penerima_nama: document.getElementById('out-penerima').value,
+      jumlah:        Number(document.getElementById('out-jumlah').value),
+      tanggal:       document.getElementById('out-tanggal').value,
+      keterangan:    document.getElementById('out-ket').value,
+    };
+    if (!payload.penerima_nama || !payload.jumlah) return alert("Isi Penerima dan Jumlah!");
+  }
+  else if (type === 'wali') {
+    payload = {
+      nama:       document.getElementById('w-nama').value,
+      hp:         document.getElementById('w-hp').value,
+      nama_murid: document.getElementById('w-nama-murid').value,
+      hp_murid:   document.getElementById('w-hp-murid').value,
+      alamat:     document.getElementById('w-alamat').value,
+    };
+    if (!payload.nama) return alert("Nama wali wajib diisi!");
+    table = 'master_wali';
+  }
+  else if (type === 'guru') {
+    payload = {
+      nama:   document.getElementById('gr-nama').value,
+      mapel:  document.getElementById('gr-mapel').value,
+      hp:     document.getElementById('gr-hp').value,
+    };
+    if (!payload.nama) return alert("Nama guru wajib diisi!");
+    table = 'master_guru';
+  }
+
+  showFullLoader("Menyimpan Data...");
+  const modalType = type === 'wali' ? 'wali' : type === 'guru' ? 'guru' : type;
+
+  if (!configValid) {
+    // Mode demo — simpan ke memori
+    payload.id = Date.now();
+    db[table].unshift(payload);
+    setTimeout(() => {
+      closeModal(modalType);
+      populateExportFilters();
+      renderAll();
+      hideFullLoader();
+    }, 400);
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from(TABLES[table])
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    db[table].unshift(data);
+    closeModal(modalType);
+    populateExportFilters();
+    renderAll();
+  } catch(e) {
+    alert("Gagal menyimpan: " + (e.message || e));
+  } finally {
+    hideFullLoader();
+  }
+}
+
+// ============================================================
+//  HAPUS DATA DARI SUPABASE
+// ============================================================
+async function deleteData(table, id) {
+  if (!confirm("Hapus data ini secara permanen?")) return;
+  showFullLoader("Menghapus Data...");
+
+  if (!configValid) {
+    db[table] = db[table].filter(item => item.id !== id);
+    setTimeout(() => { renderAll(); hideFullLoader(); }, 400);
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from(TABLES[table]).delete().eq('id', id);
+    if (error) throw error;
+    db[table] = db[table].filter(item => item.id !== id);
+    renderAll();
+  } catch(e) {
+    alert("Gagal menghapus: " + (e.message || e));
+  } finally {
+    hideFullLoader();
+  }
+}
+
+// ============================================================
+//  UI RENDERERS
+// ============================================================
 function fmt(n){ return 'Rp\u00a0' + Math.round(n||0).toLocaleString('id-ID'); }
 function initials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
 function toDateStr(d){ return d ? new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : ''; }
@@ -506,10 +696,8 @@ function toDateStr(d){ return d ? new Date(d).toLocaleDateString('id-ID',{day:'n
 function switchPage(page){
   document.querySelectorAll('.content').forEach(c=>c.classList.remove('show'));
   document.getElementById('page-'+page).classList.add('show');
-  
   const pills = document.querySelectorAll('.pill');
   pills.forEach((p,i)=> p.classList.toggle('active', ['laporan','pemasukan','pengeluaran','master'][i]===page));
-  
   window.scrollTo({top: 0, behavior: 'smooth'});
   renderAll();
 }
@@ -524,372 +712,207 @@ function renderAll() {
 
 function renderSummaryLive() {
   const date = new Date();
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  const currentMonthName = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-  const currentMonthPrefix = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  
+  const monthNames = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  const currentMonthName   = monthNames[date.getMonth()] + ' ' + date.getFullYear();
+  const currentMonthPrefix = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+
   const pBulanIni = db.pemasukan.filter(e => e.tanggal && e.tanggal.startsWith(currentMonthPrefix));
   const oBulanIni = db.pengeluaran.filter(e => e.tanggal && e.tanggal.startsWith(currentMonthPrefix));
-  
-  const tOmset = pBulanIni.reduce((sum, item) => sum + Number(item.jumlah), 0);
-  const tKeluar = oBulanIni.reduce((sum, item) => sum + Number(item.jumlah), 0);
+
+  const tOmset  = pBulanIni.reduce((s,i)=>s+Number(i.jumlah),0);
+  const tKeluar = oBulanIni.reduce((s,i)=>s+Number(i.jumlah),0);
   const tUntung = tOmset - tKeluar;
-  
+
   document.getElementById('s-omset').innerText = fmt(tOmset);
   document.getElementById('s-keluar').innerText = fmt(tKeluar);
   const elUntung = document.getElementById('s-untung');
   elUntung.innerText = fmt(tUntung);
-  elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'red'); 
+  elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'red');
   document.getElementById('s-bulan').innerText = currentMonthName;
 }
 
 function renderDashboard() {
-  const tOmset = db.pemasukan.reduce((sum, item) => sum + Number(item.jumlah), 0);
-  const gajiArr = db.pengeluaran.filter(e => e.kategori === 'Gaji Guru');
-  const lainArr = db.pengeluaran.filter(e => e.kategori !== 'Gaji Guru');
-  
-  const tGaji = gajiArr.reduce((sum, item) => sum + Number(item.jumlah), 0);
-  const tLain = lainArr.reduce((sum, item) => sum + Number(item.jumlah), 0);
+  const tOmset  = db.pemasukan.reduce((s,i)=>s+Number(i.jumlah),0);
+  const gajiArr = db.pengeluaran.filter(e=>e.kategori==='Gaji Guru');
+  const lainArr = db.pengeluaran.filter(e=>e.kategori!=='Gaji Guru');
+  const tGaji   = gajiArr.reduce((s,i)=>s+Number(i.jumlah),0);
+  const tLain   = lainArr.reduce((s,i)=>s+Number(i.jumlah),0);
   const tKeluar = tGaji + tLain;
   const tUntung = tOmset - tKeluar;
 
-  document.getElementById('r-omset').innerText = fmt(tOmset);
-  document.getElementById('r-gaji').innerText = fmt(tGaji);
-  document.getElementById('r-lainnya').innerText = fmt(tLain);
+  document.getElementById('r-omset').innerText  = fmt(tOmset);
+  document.getElementById('r-gaji').innerText   = fmt(tGaji);
+  document.getElementById('r-lainnya').innerText= fmt(tLain);
   document.getElementById('r-keluar').innerText = fmt(tKeluar);
-  
   const rUntung = document.getElementById('r-untung');
-  rUntung.innerText = fmt(tUntung);
+  rUntung.innerText   = fmt(tUntung);
   rUntung.style.color = tUntung >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
 function renderPemasukan() {
   const el = document.getElementById('list-pemasukan');
-  if(db.pemasukan.length === 0){
-    el.innerHTML = '<div class="empty"><div class="empty-ico">&#128203;</div>Belum ada data pemasukan</div>';
-    return;
-  }
-  el.innerHTML = db.pemasukan.map(e => `
+  if(!db.pemasukan.length){ el.innerHTML='<div class="empty"><div class="empty-ico">&#128203;</div>Belum ada data pemasukan</div>'; return; }
+  el.innerHTML = db.pemasukan.map(e=>`
     <div class="card">
       <div class="ava g">${initials(e.wali_nama)}</div>
       <div class="ci">
         <div class="cn">${e.wali_nama}</div>
-        <div class="cm">${toDateStr(e.tanggal)} · ${e.murid_nama ? 'Murid: '+e.murid_nama : ''}</div>
+        <div class="cm">${toDateStr(e.tanggal)} · ${e.murid_nama?'Murid: '+e.murid_nama:''}</div>
       </div>
       <div class="ca g">+ ${fmt(e.jumlah)}</div>
-      <button class="del-btn" onclick="deleteData('pemasukan', ${e.id})">&#10005;</button>
-    </div>
-  `).join('');
+      <button class="del-btn" onclick="deleteData('pemasukan', '${e.id}')">&#10005;</button>
+    </div>`).join('');
 }
 
 function renderPengeluaran() {
   const el = document.getElementById('list-pengeluaran');
-  if(db.pengeluaran.length === 0){
-    el.innerHTML = '<div class="empty"><div class="empty-ico">&#128184;</div>Belum ada data pengeluaran</div>';
-    return;
-  }
-  const catColor = { 'Gaji Guru': 'a', 'Operasional': 'r', 'Inventaris': 'r', 'Lain-lain': 'r' };
-  el.innerHTML = db.pengeluaran.map(e => `
+  if(!db.pengeluaran.length){ el.innerHTML='<div class="empty"><div class="empty-ico">&#128184;</div>Belum ada data pengeluaran</div>'; return; }
+  const catColor = {'Gaji Guru':'a','Operasional':'r','Inventaris':'r','Lain-lain':'r'};
+  el.innerHTML = db.pengeluaran.map(e=>`
     <div class="card">
-      <div class="ava ${catColor[e.kategori]||'r'}">${initials(e.penerima_nama || e.kategori)}</div>
+      <div class="ava ${catColor[e.kategori]||'r'}">${initials(e.penerima_nama||e.kategori)}</div>
       <div class="ci">
-        <div class="cn">${e.penerima_nama || e.kategori}</div>
+        <div class="cn">${e.penerima_nama||e.kategori}</div>
         <div class="cm"><span class="cm-badge">${e.kategori}</span>${toDateStr(e.tanggal)}</div>
       </div>
       <div class="ca r">- ${fmt(e.jumlah)}</div>
-      <button class="del-btn" onclick="deleteData('pengeluaran', ${e.id})">&#10005;</button>
-    </div>
-  `).join('');
+      <button class="del-btn" onclick="deleteData('pengeluaran', '${e.id}')">&#10005;</button>
+    </div>`).join('');
 }
 
 function renderMaster() {
-  // REVISI: Tampilan Data Wali Murid baru
   const elWali = document.getElementById('list-wali');
-  elWali.innerHTML = db.master_wali.length ? db.master_wali.map(w => `
+  elWali.innerHTML = db.master_wali.length ? db.master_wali.map(w=>`
     <div class="person-card">
       <div class="ava g">${initials(w.nama)}</div>
       <div class="ci">
         <div class="cn">${w.nama}</div>
-        <div class="cm" style="font-weight:700; color:var(--txt2);">
-            Siswa: ${w.nama_murid||'-'} ${w.hp_murid ? '('+w.hp_murid+')' : ''}
-        </div>
-        <div class="cm" style="font-size:11px; margin-top:4px;">${w.hp||'-'} · ${w.alamat||'-'}</div>
+        <div class="cm" style="font-weight:700;color:var(--txt2)">Siswa: ${w.nama_murid||'-'} ${w.hp_murid?'('+w.hp_murid+')':''}</div>
+        <div class="cm" style="font-size:11px;margin-top:4px">${w.hp||'-'} · ${w.alamat||'-'}</div>
       </div>
-      <button class="del-btn" style="margin-top:-5px;" onclick="deleteData('master_wali', ${w.id})">&#10005;</button>
-    </div>
-  `).join('') : '<div class="empty">Kosong</div>';
+      <button class="del-btn" style="margin-top:-5px" onclick="deleteData('master_wali', '${w.id}')">&#10005;</button>
+    </div>`).join('') : '<div class="empty">Kosong</div>';
 
   const elGuru = document.getElementById('list-guru');
-  elGuru.innerHTML = db.master_guru.length ? db.master_guru.map(g => `
+  elGuru.innerHTML = db.master_guru.length ? db.master_guru.map(g=>`
     <div class="person-card">
       <div class="ava a">${initials(g.nama)}</div>
       <div class="ci"><div class="cn">${g.nama}</div><div class="cm">${g.mapel||'-'} · ${g.hp||'-'}</div></div>
-      <button class="del-btn" onclick="deleteData('master_guru', ${g.id})">&#10005;</button>
-    </div>
-  `).join('') : '<div class="empty">Kosong</div>';
+      <button class="del-btn" onclick="deleteData('master_guru', '${g.id}')">&#10005;</button>
+    </div>`).join('') : '<div class="empty">Kosong</div>';
 }
 
-// ==========================================
-// MODAL & FORM LOGIC
-// ==========================================
+// ============================================================
+//  MODAL & FORM LOGIC
+// ============================================================
 const today = new Date().toISOString().split('T')[0];
 
 function openModal(type) {
   if (type === 'pemasukan') {
     const sel = document.getElementById('p-wali');
-    sel.innerHTML = '<option value="">-- Pilih Wali --</option>' + db.master_wali.map(w => `<option value="${w.nama}">${w.nama}</option>`).join('');
-    document.getElementById('p-murid').value = '';
+    sel.innerHTML = '<option value="">-- Pilih Wali --</option>' + db.master_wali.map(w=>`<option value="${w.nama}">${w.nama}</option>`).join('');
+    document.getElementById('p-murid').value  = '';
     document.getElementById('p-jumlah').value = '';
-    document.getElementById('p-tanggal').value = today;
-    document.getElementById('p-ket').value = '';
+    document.getElementById('p-tanggal').value= today;
+    document.getElementById('p-ket').value    = '';
   } else if (type === 'wali') {
-    document.getElementById('w-nama').value = '';
-    document.getElementById('w-hp').value = '';
-    document.getElementById('w-nama-murid').value = '';
-    document.getElementById('w-hp-murid').value = '';
-    document.getElementById('w-alamat').value = '';
+    document.getElementById('w-nama').value      = '';
+    document.getElementById('w-hp').value        = '';
+    document.getElementById('w-nama-murid').value= '';
+    document.getElementById('w-hp-murid').value  = '';
+    document.getElementById('w-alamat').value    = '';
   } else if (type === 'guru') {
-    document.getElementById('gr-nama').value = '';
+    document.getElementById('gr-nama').value  = '';
     document.getElementById('gr-mapel').value = '';
-    document.getElementById('gr-hp').value = '';
+    document.getElementById('gr-hp').value    = '';
   }
   document.getElementById('ov-'+type).classList.add('open');
 }
 
 function autoFillMurid() {
-    const waliName = document.getElementById('p-wali').value;
-    const waliObj = db.master_wali.find(w => w.nama === waliName);
-    if(waliObj && waliObj.nama_murid) {
-        document.getElementById('p-murid').value = waliObj.nama_murid;
-    } else {
-        document.getElementById('p-murid').value = '';
-    }
+  const waliName = document.getElementById('p-wali').value;
+  const waliObj  = db.master_wali.find(w => w.nama === waliName);
+  document.getElementById('p-murid').value = (waliObj && waliObj.nama_murid) ? waliObj.nama_murid : '';
 }
 
 function openModalPengeluaran(kategori) {
-  document.getElementById('out-title').innerText = "Catat " + kategori;
-  document.getElementById('out-kategori').value = kategori;
+  document.getElementById('out-title').innerText   = "Catat " + kategori;
+  document.getElementById('out-kategori').value    = kategori;
   const wrap = document.getElementById('out-penerima-input-area');
-  const lbl = document.getElementById('out-penerima-lbl');
-  
+  const lbl  = document.getElementById('out-penerima-lbl');
   if (kategori === 'Gaji Guru') {
     lbl.innerText = "Pilih Guru";
     wrap.innerHTML = `<select class="finp" id="out-penerima"><option value="">-- Pilih Guru --</option>
-      ${db.master_guru.map(g=> `<option value="${g.nama}">${g.nama}</option>`).join('')}
-    </select>`;
+      ${db.master_guru.map(g=>`<option value="${g.nama}">${g.nama}</option>`).join('')}</select>`;
   } else {
     lbl.innerText = "Keterangan Singkat / Penerima";
     wrap.innerHTML = `<input type="text" class="finp" id="out-penerima" placeholder="Contoh: Beli Spidol, Bayar PLN">`;
   }
-
-  document.getElementById('out-jumlah').value = '';
+  document.getElementById('out-jumlah').value  = '';
   document.getElementById('out-tanggal').value = today;
-  document.getElementById('out-ket').value = '';
+  document.getElementById('out-ket').value     = '';
   document.getElementById('ov-pengeluaran').classList.add('open');
 }
 
-function closeModal(type) { document.getElementById('ov-'+type).classList.remove('open'); }
-function closeBg(e, type) { if(e.target.classList.contains('overlay')) closeModal(type); }
+function closeModal(type){ document.getElementById('ov-'+type).classList.remove('open'); }
+function closeBg(e, type){ if(e.target.classList.contains('overlay')) closeModal(type); }
 
-// ==========================================
-// CRUD OPERATIONS
-// ==========================================
-async function saveData(type) {
-  let payload = {};
-  
-  if (type === 'pemasukan') {
-    payload = {
-      wali_nama: document.getElementById('p-wali').value,
-      murid_nama: document.getElementById('p-murid').value,
-      jumlah: Number(document.getElementById('p-jumlah').value),
-      tanggal: document.getElementById('p-tanggal').value,
-      keterangan: document.getElementById('p-ket').value
-    };
-    if(!payload.wali_nama || !payload.jumlah) return alert("Pilih Wali dan isi jumlah!");
-  } 
-  else if (type === 'pengeluaran') {
-    payload = {
-      kategori: document.getElementById('out-kategori').value,
-      penerima_nama: document.getElementById('out-penerima').value,
-      jumlah: Number(document.getElementById('out-jumlah').value),
-      tanggal: document.getElementById('out-tanggal').value,
-      keterangan: document.getElementById('out-ket').value
-    };
-    if(!payload.penerima_nama || !payload.jumlah) return alert("Isi Penerima dan Jumlah!");
-  }
-  else if (type === 'wali') {
-    payload = {
-      nama: document.getElementById('w-nama').value,
-      hp: document.getElementById('w-hp').value,
-      nama_murid: document.getElementById('w-nama-murid').value,
-      hp_murid: document.getElementById('w-hp-murid').value,
-      alamat: document.getElementById('w-alamat').value
-    };
-    if(!payload.nama) return alert("Nama wali wajib diisi!");
-    type = 'master_wali';
-  }
-  else if (type === 'guru') {
-    payload = {
-      nama: document.getElementById('gr-nama').value,
-      mapel: document.getElementById('gr-mapel').value,
-      hp: document.getElementById('gr-hp').value
-    };
-    if(!payload.nama) return alert("Nama guru wajib diisi!");
-    type = 'master_guru';
-  }
-
-  showFullLoader("Menyimpan Data...");
-
-  if (IS_PREVIEW) {
-    payload.id = Date.now();
-    db[type].unshift(payload);
-    setTimeout(() => {
-        closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
-        populateExportFilters();
-        renderAll();
-        hideFullLoader();
-    }, 600);
-  } else {
-    try {
-      const res = await callGAS("save_data", { table: type, data: payload });
-      if(res.success) {
-        payload.id = res.inserted_id;
-        db[type].unshift(payload);
-        closeModal(type === 'master_wali' ? 'wali' : type === 'master_guru' ? 'guru' : type);
-        populateExportFilters();
-        renderAll();
-      } else { alert("Gagal menyimpan: " + res.message); }
-    } catch(err) {
-      alert("Kesalahan Jaringan!");
-    }
-    hideFullLoader();
-  }
-}
-
-async function deleteData(table, id) {
-  if (!confirm("Hapus data ini secara permanen?")) return;
-  showFullLoader("Menghapus Data...");
-
-  if (IS_PREVIEW) {
-    db[table] = db[table].filter(item => item.id !== id);
-    setTimeout(() => { renderAll(); hideFullLoader(); }, 500);
-  } else {
-    try {
-      const res = await callGAS("delete_data", { table: table, id: id });
-      if(res.success) {
-        db[table] = db[table].filter(item => item.id !== id);
-        renderAll();
-      } else { alert("Gagal menghapus: " + res.message); }
-    } catch(err) {
-      alert("Kesalahan Jaringan!");
-    }
-    hideFullLoader();
-  }
-}
-
-// ==========================================
-// EXPORT PDF LENGKAP (jsPDF + autoTable)
-// ==========================================
+// ============================================================
+//  EXPORT PDF (sama persis, tidak berubah)
+// ============================================================
 function populateExportFilters() {
   const years = new Set();
-  [...db.pemasukan, ...db.pengeluaran].forEach(item => {
-    if(item.tanggal) years.add(item.tanggal.substring(0,4));
-  });
-  
+  [...db.pemasukan, ...db.pengeluaran].forEach(item => { if(item.tanggal) years.add(item.tanggal.substring(0,4)); });
   const currentYear = new Date().getFullYear().toString();
   years.add(currentYear);
-  
   const elTahun = document.getElementById('exp-tahun');
   let opts = '<option value="semua">Semua Tahun</option>';
-  Array.from(years).sort().reverse().forEach(y => { opts += `<option value="${y}">${y}</option>`; });
+  Array.from(years).sort().reverse().forEach(y=>{ opts += `<option value="${y}">${y}</option>`; });
   elTahun.innerHTML = opts;
   elTahun.value = currentYear;
-  
-  document.getElementById('exp-bulan').value = String(new Date().getMonth() + 1).padStart(2, '0');
+  document.getElementById('exp-bulan').value = String(new Date().getMonth()+1).padStart(2,'0');
 }
 
 function exportPDF() {
   const bulanOpt = document.getElementById('exp-bulan').value;
   const tahunOpt = document.getElementById('exp-tahun').value;
-  
   const filterFn = (item) => {
     if(!item.tanggal) return false;
-    const [y, m] = item.tanggal.split('-');
-    if(tahunOpt !== 'semua' && y !== tahunOpt) return false;
-    if(bulanOpt !== 'semua' && m !== bulanOpt) return false;
+    const [y,m] = item.tanggal.split('-');
+    if(tahunOpt!=='semua' && y!==tahunOpt) return false;
+    if(bulanOpt!=='semua' && m!==bulanOpt) return false;
     return true;
   };
-
   const pFiltered = db.pemasukan.filter(filterFn);
   const oFiltered = db.pengeluaran.filter(filterFn);
-  
-  let tableRows = [];
-  let tMasuk = 0;
-  let tKeluar = 0;
-
-  pFiltered.forEach(p => {
-    tableRows.push([toDateStr(p.tanggal), 'Pemasukan', 'Wali Murid', p.wali_nama + (p.murid_nama ? ` (${p.murid_nama})` : ''), fmt(p.jumlah), '-']);
-    tMasuk += Number(p.jumlah);
-  });
-  oFiltered.forEach(o => {
-    tableRows.push([toDateStr(o.tanggal), 'Pengeluaran', o.kategori, o.penerima_nama, '-', fmt(o.jumlah)]);
-    tKeluar += Number(o.jumlah);
-  });
-
-  // Urutkan berdasarkan tanggal jika diperlukan, tapi ini cukup
-  
-  const blnName = bulanOpt !== 'semua' ? document.querySelector(`#exp-bulan option[value="${bulanOpt}"]`).text : 'Semua Bulan';
-  const thnName = tahunOpt !== 'semua' ? tahunOpt : 'Semua Tahun';
-
-  // Inisialisasi jsPDF
+  let tableRows=[], tMasuk=0, tKeluar=0;
+  pFiltered.forEach(p=>{ tableRows.push([toDateStr(p.tanggal),'Pemasukan','Wali Murid',p.wali_nama+(p.murid_nama?` (${p.murid_nama})`:''),fmt(p.jumlah),'-']); tMasuk+=Number(p.jumlah); });
+  oFiltered.forEach(o=>{ tableRows.push([toDateStr(o.tanggal),'Pengeluaran',o.kategori,o.penerima_nama,'-',fmt(o.jumlah)]); tKeluar+=Number(o.jumlah); });
+  const blnName = bulanOpt!=='semua' ? document.querySelector(`#exp-bulan option[value="${bulanOpt}"]`).text : 'Semua Bulan';
+  const thnName = tahunOpt!=='semua' ? tahunOpt : 'Semua Tahun';
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  
-  // Header Laporan
-  doc.setFontSize(18);
-  doc.setTextColor(15, 110, 86); // Warna Hijau SAINSPIQ
-  doc.text("Laporan Keuangan", 14, 22);
-  
-  doc.setFontSize(11);
-  doc.setTextColor(50, 50, 50);
-  doc.text("Lembaga: SAINSPIQ FINANCE", 14, 30);
-  doc.text(`Periode: ${blnName} ${thnName}`, 14, 36);
-  
-  // Generate Tabel
+  doc.setFontSize(18); doc.setTextColor(15,110,86); doc.text("Laporan Keuangan",14,22);
+  doc.setFontSize(11); doc.setTextColor(50,50,50);
+  doc.text("Lembaga: SAINSPIQ FINANCE",14,30);
+  doc.text(`Periode: ${blnName} ${thnName}`,14,36);
   doc.autoTable({
-    startY: 42,
-    head: [['Tanggal', 'Tipe', 'Kategori', 'Nama/Keterangan', 'Pemasukan', 'Pengeluaran']],
-    body: tableRows,
-    theme: 'grid',
-    headStyles: { fillColor: [15, 110, 86] },
-    styles: { fontSize: 9 },
-    foot: [
-        [{ content: 'TOTAL KESELURUHAN', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } }, 
-         { content: fmt(tMasuk), styles: { fontStyle: 'bold', textColor: [15, 110, 86] } }, 
-         { content: fmt(tKeluar), styles: { fontStyle: 'bold', textColor: [163, 45, 45] } }]
-    ]
+    startY:42,
+    head:[['Tanggal','Tipe','Kategori','Nama/Keterangan','Pemasukan','Pengeluaran']],
+    body:tableRows, theme:'grid',
+    headStyles:{fillColor:[15,110,86]}, styles:{fontSize:9},
+    foot:[[{content:'TOTAL KESELURUHAN',colSpan:4,styles:{halign:'right',fontStyle:'bold'}},
+           {content:fmt(tMasuk),styles:{fontStyle:'bold',textColor:[15,110,86]}},
+           {content:fmt(tKeluar),styles:{fontStyle:'bold',textColor:[163,45,45]}}]]
   });
-
-  // Profit/Loss Info di Bawah Tabel
   let finalY = doc.lastAutoTable.finalY + 15;
   const laba = tMasuk - tKeluar;
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text("Ringkasan Keuangan:", 14, finalY);
-  
+  doc.setFontSize(12); doc.setTextColor(0,0,0); doc.text("Ringkasan Keuangan:",14,finalY);
   doc.setFontSize(11);
-  doc.text(`Total Pemasukan : ${fmt(tMasuk)}`, 14, finalY + 7);
-  doc.text(`Total Pengeluaran : ${fmt(tKeluar)}`, 14, finalY + 14);
-  
-  if(laba >= 0) {
-      doc.setTextColor(15, 110, 86);
-      doc.text(`Laba / Keuntungan Bersih : ${fmt(laba)}`, 14, finalY + 21);
-  } else {
-      doc.setTextColor(163, 45, 45);
-      doc.text(`Kerugian / Minus : ${fmt(laba)}`, 14, finalY + 21);
-  }
-
-  // Cetak & Download
+  doc.text(`Total Pemasukan : ${fmt(tMasuk)}`,14,finalY+7);
+  doc.text(`Total Pengeluaran : ${fmt(tKeluar)}`,14,finalY+14);
+  if(laba>=0){ doc.setTextColor(15,110,86); doc.text(`Laba / Keuntungan Bersih : ${fmt(laba)}`,14,finalY+21); }
+  else { doc.setTextColor(163,45,45); doc.text(`Kerugian / Minus : ${fmt(laba)}`,14,finalY+21); }
   doc.save(`Laporan_Keuangan_Sainspiq_${blnName}_${thnName}.pdf`);
 }
 </script>
