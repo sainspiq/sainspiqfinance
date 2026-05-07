@@ -17,7 +17,7 @@
 <!-- ============================================================
    JS SDK SUPABASE
 ============================================================ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="onSupabaseReady()"></script>
 
 <style>
 /* CSS Reset & Hide Blogger Elements */
@@ -555,7 +555,8 @@ function loginSuccess() {
   initApp();
 }
 
-window.addEventListener('DOMContentLoaded', async () => {
+async function onSupabaseReady() {
+  console.log('[DEBUG] SDK Supabase loaded, window.supabase:', typeof window.supabase);
   initSupabase();
   if (configValid && !IS_PREVIEW) {
     const { data: { session } } = await sbClient.auth.getSession();
@@ -564,6 +565,16 @@ window.addEventListener('DOMContentLoaded', async () => {
       loginSuccess();
     }
   }
+}
+
+// Fallback jika onload tidak terpanggil
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (!configValid && typeof window.supabase !== 'undefined') {
+      console.log('[DEBUG] Fallback init triggered');
+      onSupabaseReady();
+    }
+  }, 500);
 });
 
 // REVISI 2: FUNCTION ANIMATED TOAST
