@@ -460,15 +460,21 @@ let sbClient = null;
 let configValid = false;
 
 function initSupabase() {
+  console.log('[DEBUG] initSupabase called');
+  console.log('[DEBUG] URL:', SUPABASE_URL);
+  console.log('[DEBUG] KEY prefix:', SUPABASE_ANON_KEY.substring(0,20));
   if (SUPABASE_URL.includes('GANTI') || SUPABASE_ANON_KEY.includes('GANTI')) {
     document.getElementById('setup-notice').classList.add('show');
+    console.warn('[DEBUG] Config belum diisi!');
     return false;
   }
   try {
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     configValid = true;
+    console.log('[DEBUG] Supabase client OK, configValid=', configValid);
     return true;
   } catch(e) {
+    console.error('[DEBUG] createClient error:', e);
     return false;
   }
 }
@@ -498,6 +504,8 @@ async function doLogin() {
 
   btn.innerText = "Memeriksa...";
   errBox.style.display = 'none';
+
+  console.log('[DEBUG] doLogin - configValid:', configValid, 'IS_PREVIEW:', IS_PREVIEW);
 
   if (!configValid || IS_PREVIEW) {
     // Mode demo Canvas / Fallback
