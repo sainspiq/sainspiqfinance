@@ -407,7 +407,7 @@ const TABLES = {
 // ============================================================
 //  INISIALISASI SUPABASE CLIENT
 // ============================================================
-let supabase = null;
+let sbClient = null;
 let configValid = false;
 
 function initSupabase() {
@@ -417,7 +417,7 @@ function initSupabase() {
     return false;
   }
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     configValid = true;
     return true;
   } catch(e) {
@@ -472,7 +472,7 @@ async function doLogin() {
   const email = userInput.includes('@') ? userInput : userInput + '@sainspiq.local';
   
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
     currentUser = { username: data.user.email, role: 'user', id: data.user.id };
     loginSuccess();
@@ -485,7 +485,7 @@ async function doLogin() {
 
 async function doLogout() {
   if (configValid && supabase) {
-    await supabase.auth.signOut();
+    await sbClient.auth.signOut();
   }
   currentUser = null;
   db = { pemasukan: [], pengeluaran: [], master_wali: [], master_guru: [] };
@@ -508,7 +508,7 @@ function loginSuccess() {
 window.addEventListener('DOMContentLoaded', async () => {
   initSupabase();
   if (configValid) {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sbClient.auth.getSession();
     if (session) {
       currentUser = { username: session.user.email, role: 'user', id: session.user.id };
       loginSuccess();
@@ -551,10 +551,10 @@ async function fetchData() {
     try {
       // Fetch semua tabel secara paralel
       const [resWali, resGuru, resPemasukan, resPengeluaran] = await Promise.all([
-        supabase.from(TABLES.master_wali).select('*').order('created_at', { ascending: false }),
-        supabase.from(TABLES.master_guru).select('*').order('created_at', { ascending: false }),
-        supabase.from(TABLES.pemasukan).select('*').order('tanggal', { ascending: false }),
-        supabase.from(TABLES.pengeluaran).select('*').order('tanggal', { ascending: false }),
+        sbClient.from(TABLES.master_wali).select('*').order('created_at', { ascending: false }),
+        sbClient.from(TABLES.master_guru).select('*').order('created_at', { ascending: false }),
+        sbClient.from(TABLES.pemasukan).select('*').order('tanggal', { ascending: false }),
+        sbClient.from(TABLES.pengeluaran).select('*').order('tanggal', { ascending: false }),
       ]);
 
       if (resWali.error)       throw resWali.error;
@@ -675,7 +675,7 @@ async function deleteData(table, id) {
   }
 
   try {
-    const { error } = await supabase.from(TABLES[table]).delete().eq('id', id);
+    const { error } = await sbClient.from(TABLES[table]).delete().eq('id', id);
     if (error) throw error;
     db[table] = db[table].filter(item => item.id !== id);
     renderAll();
