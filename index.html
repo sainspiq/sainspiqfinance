@@ -15,7 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
 <!-- ============================================================
-   JS SDK
+   JS SDK SUPABASE
 ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -55,16 +55,33 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 .btn-logout { background:rgba(255,255,255,0.15); color:#fff; border:none; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; cursor:pointer; font-family: inherit;}
 .btn-logout:hover { background:rgba(255,255,255,0.25); }
 
-/* SUMMARY CARDS */
+/* REVISI 1: MODERN SUMMARY CARD */
 .sc-wrap { padding: 20px 20px 0; }
-.sc-header-title { font-size: 14px; font-weight: 800; color: var(--txt); margin-bottom: 12px; }
-.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0}
-.sc{background:var(--card);border-radius:16px;padding:16px; border: 1px solid var(--border); box-shadow: var(--shadow);}
-.sc-lbl{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
-.sc-val{font-size:20px;font-weight:800;color:var(--txt)}
-.sc-val.profit{color:var(--green)}
-.sc-val.warn{color:var(--amber)}
-.sc-val.red{color:var(--red)}
+.modern-summary-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fbfb 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(15,110,86,0.06);
+  position: relative;
+  overflow: hidden;
+}
+.modern-summary-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--green), #20b28d);
+}
+.msc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.msc-title { font-size: 15px; font-weight: 800; color: var(--txt); }
+.msc-month { font-size: 12px; font-weight: 700; color: var(--green); background: var(--green-l); padding: 4px 10px; border-radius: 10px; }
+.msc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.msc-item { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px; text-align: center; }
+.msc-lbl { font-size: 11px; font-weight: 800; color: var(--txt2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.msc-val { font-size: 17px; font-weight: 800; }
+.msc-val.profit { color: var(--green); }
+.msc-val.warn { color: var(--red); }
+.msc-footer { background: var(--green); border-radius: 14px; padding: 18px; text-align: center; color: #fff; box-shadow: 0 8px 16px rgba(15,110,86,0.2); }
+.msc-lbl-footer { font-size: 12px; font-weight: 700; opacity: 0.9; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.msc-val-footer { font-size: 26px; font-weight: 800; }
 
 /* NAV PILLS */
 .nav-pills { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-top: 20px; position: relative; z-index: 10; }
@@ -143,9 +160,30 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 .export-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
 .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;}
 
-/*  CONFIG SETUP NOTICE */
+/* CONFIG SETUP NOTICE */
 .setup-notice { background: var(--amber-l); border: 1.5px solid var(--amber-t); border-radius: 14px; padding: 14px 16px; margin: 0 20px 16px; font-size: 12px; font-weight: 600; color: var(--amber); display: none; }
 .setup-notice.show { display: block; }
+
+/* REVISI 2: ANIMATED SUCCESS TOAST */
+.anim-toast {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5);
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+  padding: 24px 40px; border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  z-index: 10000; opacity: 0; pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.anim-toast.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+.at-icon {
+  width: 70px; height: 70px; background: var(--green); color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 20px rgba(15,110,86,0.3);
+}
+.at-icon svg { width: 36px; height: 36px; stroke-dasharray: 50; stroke-dashoffset: 50; }
+.anim-toast.show .at-icon svg { animation: drawCheck 0.6s ease forwards 0.2s; }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+.at-text { font-size: 20px; font-weight: 800; color: var(--txt); }
 </style>
 </head>
 <body>
@@ -154,6 +192,14 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 <img class="blogger-thumbnail" src="https://via.placeholder.com/600x400/0F6E56/ffffff?text=Aplikasi+Keuangan+Sainspiq" alt="Thumbnail">
 
 <div class="app">
+
+  <!-- REVISI 2: ANIMATED TOAST UI -->
+  <div id="anim-toast" class="anim-toast">
+    <div class="at-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="at-text" id="at-msg">Berhasil!</div>
+  </div>
 
   <!-- FULL PAGE LOADER -->
   <div id="full-loader" class="loader-full">
@@ -180,7 +226,7 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
       <button class="btn-save" onclick="doLogin()" id="btn-login">Masuk Sekarang</button>
       
       <div style="margin-top: 20px; font-size: 12px; font-weight:600; color: var(--txt3);">
-        Login menggunakan akun  Auth Anda
+        Login menggunakan akun Auth Anda
       </div>
     </div>
   </div>
@@ -196,17 +242,30 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 
     <!-- SETUP NOTICE -->
     <div id="setup-notice" class="setup-notice">
-      ⚠️ Konfigurasi  belum diisi. Edit variabel _URL dan _ANON_KEY di bagian script.
+      ⚠️ Konfigurasi belum diisi. Edit variabel _URL dan _ANON_KEY di bagian script.
     </div>
 
-    <!-- SUMMARY CARDS -->
+    <!-- REVISI 1: MODERN SUMMARY CARD -->
     <div class="sc-wrap">
-      <div class="sc-header-title">Ringkasan Bulan Ini</div>
-      <div class="summary" id="summary-bar">
-        <div class="sc"><div class="sc-lbl">Total Omset</div><div class="sc-val profit" id="s-omset">Rp 0</div></div>
-        <div class="sc"><div class="sc-lbl">Keuntungan</div><div class="sc-val profit" id="s-untung">Rp 0</div></div>
-        <div class="sc"><div class="sc-lbl">Total Keluar</div><div class="sc-val warn" id="s-keluar">Rp 0</div></div>
-        <div class="sc"><div class="sc-lbl">Bulan Ini</div><div class="sc-val" id="s-bulan" style="font-size:16px; color:var(--txt2);">Bulan</div></div>
+      <div class="modern-summary-card">
+        <div class="msc-header">
+          <div class="msc-title">Ringkasan Keuangan</div>
+          <div class="msc-month" id="s-bulan">Bulan Ini</div>
+        </div>
+        <div class="msc-grid">
+          <div class="msc-item">
+            <div class="msc-lbl">Total Omset</div>
+            <div class="msc-val profit" id="s-omset">Rp 0</div>
+          </div>
+          <div class="msc-item">
+            <div class="msc-lbl">Total Keluar</div>
+            <div class="msc-val warn" id="s-keluar">Rp 0</div>
+          </div>
+        </div>
+        <div class="msc-footer">
+          <div class="msc-lbl-footer">Keuntungan Bersih</div>
+          <div class="msc-val-footer" id="s-untung">Rp 0</div>
+        </div>
       </div>
     </div>
 
@@ -379,24 +438,17 @@ body, html { height: 100%; width: 100%; margin: 0; padding: 0; font-family:'Plus
 
 <script>
 // ============================================================
-//  ██████╗ ██╗   ██╗██████╗  █████╗ ███████╗███████╗
-//  ██╔════╝██║   ██║██╔══██╗██╔══██╗██╔════╝██╔════╝
-//  ███████╗██║   ██║██████╔╝███████║███████╗█████╗
-//  ╚════██║██║   ██║██╔═══╝ ██╔══██║╚════██║██╔══╝
-//  ███████║╚██████╔╝██║     ██║  ██║███████║███████╗
-//  ╚══════╝ ╚═════╝ ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝
-//  KONFIGURASI  — WAJIB DIISI
+// KONFIGURASI APLIKASI (WAJIB ADA SESUAI ATURAN PERSONA)
 // ============================================================
+const IS_PREVIEW = true; // Set false jika dideploy via GAS
+const GAS_URL = "URL_DEPLOY_GAS_ANDA_DISINI";
 
+// ============================================================
+//  SUPABASE CONFIG
+// ============================================================
 const SUPABASE_URL  = "https://qumjicuqguiccxtdjali.supabase.co";
-// Contoh: "https://xyzabcdef.supabase.co"
-
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1bWppY3VxZ3VpY2N4dGRqYWxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MDAzNzQsImV4cCI6MjA5MzM3NjM3NH0.X_oa8lvoNh86kcG9SNyanJaZTWS2Suzmd7T6ebk35_k";
-// Contoh: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-// ============================================================
-//  NAMA TABEL DI SUPABASE (sesuaikan jika berbeda)
-// ============================================================
 const TABLES = {
   pemasukan:    'pemasukan',
   pengeluaran:  'pengeluaran',
@@ -404,15 +456,11 @@ const TABLES = {
   master_guru:  'master_guru',
 };
 
-// ============================================================
-//  INISIALISASI SUPABASE CLIENT
-// ============================================================
 let sbClient = null;
 let configValid = false;
 
 function initSupabase() {
   if (SUPABASE_URL.includes('GANTI') || SUPABASE_ANON_KEY.includes('GANTI')) {
-    console.warn("⚠️ Supabase belum dikonfigurasi! Isi SUPABASE_URL dan SUPABASE_ANON_KEY.");
     document.getElementById('setup-notice').classList.add('show');
     return false;
   }
@@ -421,7 +469,6 @@ function initSupabase() {
     configValid = true;
     return true;
   } catch(e) {
-    console.error("Gagal init Supabase:", e);
     return false;
   }
 }
@@ -435,7 +482,7 @@ let db = {
 let currentUser = null;
 
 // ============================================================
-//  AUTENTIKASI — SUPABASE AUTH
+//  AUTENTIKASI & ANIMASI
 // ============================================================
 async function doLogin() {
   const userInput = document.getElementById('login-user').value.trim();
@@ -452,8 +499,8 @@ async function doLogin() {
   btn.innerText = "Memeriksa...";
   errBox.style.display = 'none';
 
-  if (!configValid) {
-    // Mode demo jika Supabase belum dikonfigurasi
+  if (!configValid || IS_PREVIEW) {
+    // Mode demo Canvas / Fallback
     setTimeout(() => {
       if ((userInput === 'admin' && pass === 'edudigital') || (userInput === 'peserta' && pass === 'edudigital')) {
         currentUser = { username: userInput, role: userInput === 'admin' ? 'admin' : 'staff' };
@@ -467,8 +514,6 @@ async function doLogin() {
     return;
   }
 
-  // Supabase Auth — login dengan email + password
-  // Jika user memasukkan username (bukan email), tambahkan domain dummy
   const email = userInput.includes('@') ? userInput : userInput + '@sainspiq.local';
   
   try {
@@ -484,7 +529,7 @@ async function doLogin() {
 }
 
 async function doLogout() {
-  if (configValid && supabase) {
+  if (configValid && !IS_PREVIEW) {
     await sbClient.auth.signOut();
   }
   currentUser = null;
@@ -502,12 +547,9 @@ function loginSuccess() {
   initApp();
 }
 
-// ============================================================
-//  CEK SESI SAAT HALAMAN DIMUAT (Auto-login jika sudah login)
-// ============================================================
 window.addEventListener('DOMContentLoaded', async () => {
   initSupabase();
-  if (configValid) {
+  if (configValid && !IS_PREVIEW) {
     const { data: { session } } = await sbClient.auth.getSession();
     if (session) {
       currentUser = { username: session.user.email, role: 'user', id: session.user.id };
@@ -516,9 +558,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ============================================================
-//  LOADER HELPERS
-// ============================================================
+// REVISI 2: FUNCTION ANIMATED TOAST
+function showSuccessAnim(msg) {
+  const toast = document.getElementById('anim-toast');
+  document.getElementById('at-msg').innerText = msg || 'Berhasil!';
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); }, 2200);
+}
+
 function showFullLoader(text) {
   document.getElementById('loader-text').innerText = text;
   document.getElementById('full-loader').style.display = 'flex';
@@ -528,7 +575,7 @@ function hideFullLoader() {
 }
 
 // ============================================================
-//  INIT & FETCH DATA DARI SUPABASE
+//  INIT & FETCH DATA
 // ============================================================
 async function initApp() {
   switchPage('laporan');
@@ -539,37 +586,23 @@ async function fetchData() {
   const loader = document.getElementById('global-loader');
   loader.style.display = 'block';
 
-  if (!configValid) {
-    // Data demo
-    db.master_wali  = [{id:1,nama:'Bpk Ahmad',hp:'0811',alamat:'Jl. A',nama_murid:'Andi Supri',hp_murid:'0855'},
-                       {id:2,nama:'Ibu Budi', hp:'0822',alamat:'Jl. B',nama_murid:'Budi Santoso',hp_murid:''}];
-    db.master_guru  = [{id:1,nama:'Bu Siti',mapel:'MTK',hp:'083'},{id:2,nama:'Pak Eko',mapel:'IPA',hp:'084'}];
+  if (!configValid || IS_PREVIEW) {
+    db.master_wali  = [{id:1,nama:'Bpk Ahmad',hp:'0811',alamat:'Jl. A',nama_murid:'Andi Supri',hp_murid:'0855'}];
+    db.master_guru  = [{id:1,nama:'Bu Siti',mapel:'MTK',hp:'083'}];
     const curDate   = new Date().toISOString().split('T')[0];
     db.pemasukan    = [{id:101,wali_nama:'Bpk Ahmad',murid_nama:'Andi Supri',jumlah:500000,tanggal:curDate,keterangan:'SPP Mei'}];
     db.pengeluaran  = [{id:201,kategori:'Gaji Guru',penerima_nama:'Bu Siti',jumlah:300000,tanggal:curDate,keterangan:'Gaji'}];
   } else {
     try {
-      // Fetch semua tabel secara paralel
       const [resWali, resGuru, resPemasukan, resPengeluaran] = await Promise.all([
         sbClient.from(TABLES.master_wali).select('*').order('created_at', { ascending: false }),
         sbClient.from(TABLES.master_guru).select('*').order('created_at', { ascending: false }),
         sbClient.from(TABLES.pemasukan).select('*').order('tanggal', { ascending: false }),
         sbClient.from(TABLES.pengeluaran).select('*').order('tanggal', { ascending: false }),
       ]);
-
-      if (resWali.error)       throw resWali.error;
-      if (resGuru.error)       throw resGuru.error;
-      if (resPemasukan.error)  throw resPemasukan.error;
-      if (resPengeluaran.error) throw resPengeluaran.error;
-
-      db.master_wali  = resWali.data        || [];
-      db.master_guru  = resGuru.data        || [];
-      db.pemasukan    = resPemasukan.data   || [];
-      db.pengeluaran  = resPengeluaran.data || [];
-
-    } catch(e) {
-      alert("Gagal sinkronisasi data: " + (e.message || e));
-    }
+      db.master_wali  = resWali.data || []; db.master_guru = resGuru.data || [];
+      db.pemasukan    = resPemasukan.data || []; db.pengeluaran = resPengeluaran.data || [];
+    } catch(e) { alert("Gagal sinkronisasi."); }
   }
 
   populateExportFilters();
@@ -578,7 +611,7 @@ async function fetchData() {
 }
 
 // ============================================================
-//  SIMPAN DATA KE SUPABASE
+//  SIMPAN DATA
 // ============================================================
 async function saveData(type) {
   let payload = {};
@@ -628,8 +661,7 @@ async function saveData(type) {
   showFullLoader("Menyimpan Data...");
   const modalType = type === 'wali' ? 'wali' : type === 'guru' ? 'guru' : type;
 
-  if (!configValid) {
-    // Mode demo — simpan ke memori
+  if (!configValid || IS_PREVIEW) {
     payload.id = Date.now();
     db[table].unshift(payload);
     setTimeout(() => {
@@ -637,53 +669,42 @@ async function saveData(type) {
       populateExportFilters();
       renderAll();
       hideFullLoader();
+      showSuccessAnim("Data Berhasil Disimpan!"); // Panggil animasi di sini
     }, 400);
     return;
   }
 
   try {
-    const { data, error } = await supabase
-      .from(TABLES[table])
-      .insert([payload])
-      .select()
-      .single();
-
+    const { data, error } = await sbClient.from(TABLES[table]).insert([payload]).select().single();
     if (error) throw error;
-
     db[table].unshift(data);
     closeModal(modalType);
     populateExportFilters();
     renderAll();
+    showSuccessAnim("Data Berhasil Disimpan!"); // Panggil animasi
   } catch(e) {
-    alert("Gagal menyimpan: " + (e.message || e));
+    alert("Gagal menyimpan.");
   } finally {
     hideFullLoader();
   }
 }
 
-// ============================================================
-//  HAPUS DATA DARI SUPABASE
-// ============================================================
 async function deleteData(table, id) {
-  if (!confirm("Hapus data ini secara permanen?")) return;
+  if (!confirm("Hapus data ini?")) return;
   showFullLoader("Menghapus Data...");
 
-  if (!configValid) {
+  if (!configValid || IS_PREVIEW) {
     db[table] = db[table].filter(item => item.id !== id);
-    setTimeout(() => { renderAll(); hideFullLoader(); }, 400);
+    setTimeout(() => { renderAll(); hideFullLoader(); showSuccessAnim("Data Dihapus!"); }, 400);
     return;
   }
 
   try {
-    const { error } = await sbClient.from(TABLES[table]).delete().eq('id', id);
-    if (error) throw error;
+    await sbClient.from(TABLES[table]).delete().eq('id', id);
     db[table] = db[table].filter(item => item.id !== id);
     renderAll();
-  } catch(e) {
-    alert("Gagal menghapus: " + (e.message || e));
-  } finally {
-    hideFullLoader();
-  }
+    showSuccessAnim("Data Dihapus!"); // Panggil animasi
+  } catch(e) { alert("Gagal menghapus."); } finally { hideFullLoader(); }
 }
 
 // ============================================================
@@ -727,7 +748,14 @@ function renderSummaryLive() {
   document.getElementById('s-keluar').innerText = fmt(tKeluar);
   const elUntung = document.getElementById('s-untung');
   elUntung.innerText = fmt(tUntung);
-  elUntung.className = 'sc-val ' + (tUntung >= 0 ? 'profit' : 'red');
+  
+  // Ubah warna text keuntungan berdasarkan minus/plus
+  if (tUntung < 0) {
+      elUntung.style.color = '#ffcccc'; // merah muda untuk minus (bg hijau gelap)
+  } else {
+      elUntung.style.color = '#ffffff';
+  }
+  
   document.getElementById('s-bulan').innerText = currentMonthName;
 }
 
@@ -803,7 +831,7 @@ function renderMaster() {
 }
 
 // ============================================================
-//  MODAL & FORM LOGIC
+//  MODAL LOGIC
 // ============================================================
 const today = new Date().toISOString().split('T')[0];
 
@@ -857,9 +885,6 @@ function openModalPengeluaran(kategori) {
 function closeModal(type){ document.getElementById('ov-'+type).classList.remove('open'); }
 function closeBg(e, type){ if(e.target.classList.contains('overlay')) closeModal(type); }
 
-// ============================================================
-//  EXPORT PDF (sama persis, tidak berubah)
-// ============================================================
 function populateExportFilters() {
   const years = new Set();
   [...db.pemasukan, ...db.pengeluaran].forEach(item => { if(item.tanggal) years.add(item.tanggal.substring(0,4)); });
